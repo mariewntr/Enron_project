@@ -1,0 +1,132 @@
+---
+title: "R4BD_Enron_project"
+author: "Marie Winter"
+date: "2025-04-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+## A little history about Enron company
+
+Enron is a natural-gas-transmission company founded in 1985 in the US. In 1990's the US congress adopt a series of law to deregulate the sale of natural gas. This makes Enron loosing it's exclusivity right on the natural gas pipeline. At this time Jeffrey Skilling, who was initially a consultant and later became the company's chief operating officer, transformed Enron into a trader energy derivative to be an intermediary between natural-gas producers and their customers. Soon after that, Enron become a leader in this market and makes huge profit on its trade. This golden age for the company allow them to recruit Andrew Fastow who quickly became the chief financial officer. Moreover, they diversify their activity to include electricity, coal, paper, and steel. Perhaps, success have is limit and in late 90's the company profit start to shrank... The pressure from shareholders, company executives began to rely on dubious accounting practices. Especially they used the "market-tomarket accounting" which allowed the company to write unrealized future gain from some trading contract into current income statement, thus giving the illusion of higher current profits. In August, 2001 some people at the head of the company start to worry about a possible accounting scandals due to this practice. In October, 2001 the Securities and Exchange Commission began investigating the transactions of Enron. This was the starting event who lead the company to the bankruptcy which really start in December, 2001.  
+
+Source [Britanica Enron scandal](https://www.britannica.com/event/Enron-scandal).
+
+## Project aims 
+The principal aim of this project is to explore the Enron's email data set for extracting insight about the fiscal fraud investigation and bankruptcy of the company in 2001. For that have 3 data sets:
+
+- the employee list with their email address
+
+- the emails exchange from 1999 to 2002
+
+- the recipients of each emails (to, cc, bcc). 
+
+The different insight will are available into a shiny apps. 
+
+
+# Data exploring and cleaning
+
+## libraries and dataset
+```{r}
+#library
+library(tidyverse)
+
+#dataset
+load(file = "C:/Users/marie/Documents/DSTI_Cours/R_big_Data/Exam/Enron_project/Enron.Rdata")
+```
+
+
+## First look at the data
+The aim of this part is to see :
+
+- which kind of data the different table contains
+
+- the existence of missing value and how to handle them
+
+### employee dataset
+
+```{r}
+dim_employee <- dim(employeelist)
+
+summary(employeelist)
+```
+This data set contain `r dim_employee[1]` rows and `r dim_employee[2]` columns. 
+
+This data set contains employee ID (eid), the first and last name of the employee as well as their status, the email addresses for each employee, and the folder where their email are stored. In the status variable there exist missing value's identify by R (NA) but also putting directly in the data by the set owner which are write N/A.
+The eid variable is identify has type numeric, status is associate with a factor type and the other variable are character type. 
+
+
+```{r}
+head(employeelist)
+```
+
+By looking at the head of the data, we observed that eid is associate to numeric data type but the more adapted type seems to be factor because it is an ID for employee. In addition, the variables Email2, Email3, EMail4 contain a lot of blank. 
+
+To investigate the blank we temporary change the datatype of those variables from character to factor to see what kind of result we return for the blank observation. 
+```{r}
+employeelist %>% transform(
+  Email2 = as.factor(Email2),
+  Email3 = as.factor(Email3),
+  EMail4 = as.factor(EMail4)
+) %>% summary
+```
+We can see that, in the Email2, Email3, and EMail4 variable don't have missing value but they are blank character. In the Email3 and EMail4 more than the half of the value are blank, maybe those variable aren't very helpful for the analysis. 
+
+
+### message data set
+
+```{r}
+dim_message <- dim(message)
+
+summary(message)
+```
+This data set contain `r dim_message[1]` rows and `r dim_message[2]` columns. 
+
+Here we observed that, the mid and date variables identify as a numeric, the variables sender and message_id are attached to factor data type, and the variable subject is character data type. 
+
+```{r}
+head(message)
+```
+By looking at the head  of the data we observed that, the mid don't look like numeric data but more has identifier like the eid variable in the employeelist table. In the data frame the date variable is associate to a date type. 
+
+### recipient info data set
+
+
+### reference info data set
+
+
+
+**By exploring the data set we identify some issue in the data needed to be handle before the analysis such as data type change and missing values handling.**
+
+=> regarder comment mieux visualiser un dataframe dans le markdown
+=> finir l'explo générale pour identifier les étapes de cleaning
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
