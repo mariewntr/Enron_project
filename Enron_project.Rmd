@@ -77,7 +77,7 @@ The eid variable is identify has type numeric, status is associate with a factor
 
 Display of some observations in the data frame:
 ```{r echo=FALSE}
-kable(employeelist[1:5, ])
+kable(employeelist[1:10, ])
 ```
 
 By looking at the head of the data, we observed that eid is associate to numeric data type but the more adapted type seems to be factor because it is an ID for employee. In addition, the variables Email2, Email3, EMail4 contain a lot of blank. 
@@ -107,14 +107,28 @@ Here we observed that, the mid and date variables identify as a numeric, the var
 
 Display of some observations in the data frame:
 ```{r echo=FALSE}
-kable(message[1:5, ])
+kable(message[1:10, ])
 ```
-By looking at the head  of the data we observed that, the mid don't look like numeric data but more has identifier like the eid variable in the employeelist table. In the data frame the date variable is associate to a date type. 
+By looking at the head  of the data we observed that, the mid don't look like numeric data but more has identifier like the eid variable in the employeelist table. In the data frame the date variable is associate to a date type. More over it seems that the observation in the subject variable are repeat several time suggesting they aren't individual string but more a categorical variable.
+
 Because the description seems to treat the variable date as a numeric type but the observation look like real date in the data display above we check with the class() function if R treat it correctly by evaluating if his data type is Date:
 ```{r}
 class(message$date) == "Date"
 ```
 The result confirm us R treat the date variable in the good data type meaning Date type. For this variable it is not necessary to adapt the data type. 
+
+In the date variable the min and max values return are strange date. In the introduction we saw that the data cover the period between 1999 and 2002 and those value aren't in that period. 
+
+To understand what is those values we filter the table to get the year is less than 1999 or more than 2002:
+```{r}
+message %>% 
+  select(date) %>% #keep the date variable
+  mutate(year = format(date,"%Y")) %>% #extract the year from the date
+  filter((year < 1999) | (year > 2002)) %>% #keep the value below and after the study's period
+  group_by(year) %>% count() #count the number of rows per date out of the study's period
+```
+In filtering the strange date we can see that some aren't date (0001, 0002) and the other are out of the study's period. This represent average 450 values which makes less than 1% of the observations in the table.   
+
 
 The variable mid and message_id could be redundancy. To verify that we will count the number of distinct value for both variable to see if a mid could be attached to several message_id. 
 
@@ -141,7 +155,7 @@ The summary of the data reveal that, the rid and mid are consider as numeric var
 
 Display of some observations in the data frame:
 ```{r echo=FALSE}
-kable(recipientinfo[1:5, ])
+kable(recipientinfo[1:10, ])
 ```
 By looking at the head of this dataset we can see that rid and mid are identifier, with the result return by the summary function we need to transform those variables into factor data for having in the good type. Also, the mid variable is a foreign key allowed to link this table with the message table. Binding together this 2 table will allow us to have the sender and the receiver of the email as well as which type of receiver (direct with the to or "indirect" with the CC and BCC). The last variable rvalue is the email address of the receiver which can be general (*e.g.,* all.worldwide@enron.com, see in the head of the table) or specific to a person (*e.g.,* jeff.dasovich@enron.com, see as the top specific receiver in the summary of that table). 
 
@@ -176,9 +190,11 @@ By looking at the head of that table we can see that:
 
 We choose to :
 
-- change the data type of the identifer variable from numeric to factor. 
+- change the data type of the identifier variable in the different table from numeric to factor. 
 
-- withdraw the message_id variable in the message table to lighten the dataset.
+- change the data type of the subject variable from character to factor. 
+
+- withdraw the message_id variable in the message table to lighten the dataset. In addition we drop the lines for which the date aren't in the study's period (from 1999 to 2002) and the strange date.
 
 - for the moment, withdraw the variable Email3 and EMail4 variable in the employeelist table because they contain al lot of blank value and every employee have one Email id filled. We choose to keep for the moment the Email2 variable because it contain only 52 blank observation over the 149 which makes average 25% of the data. 
 
@@ -200,7 +216,14 @@ employeelist_2 <- employeelist %>%
 ```{r}
 message_2 <- message %>%
   select(-c(message_id)) %>% #withdraw the variable we don't need
-  transform(mid = as.factor(mid)) #change the data type for factor
+  transform(#change the data type for factor
+    mid = as.factor(mid),
+    subject = as.factor(subject)) %>%
+  #add the year variable in the table from the date
+  mutate(year = as.factor(format(date, "%Y"))) %>% 
+  #filter to keep only the date from 1999 to 2002
+  filter(year %in% c(1999 : 2002)) %>% #drop the year variable which is no more useful in the data
+  select(-year)
 ```
 
 
@@ -246,11 +269,45 @@ str(employeelist_2)
 print("Data type and dimension of the new df_message table")
 str(df_message)
 ```
+Description and head dsiplay of the new table df_message:
+```{r}
+summary(df_message)
+```
+```{r}
+kable(df_message[1:20, ])
+```
 
+We can observed that :
 
+- some mid as well as subject are repeat several time suggesting they are involved in email exchange loop and/or concern the same subject to identify in the company certain type of operation. 
 
+- for the variables sender, subject, and date the merging create 746 missing value.
 
+Identification of the context of the missing value in the df_message:
+```{r}
+df_message_missing <- df_message %>% filter(is.na(subject) | is.na(date) | is.na(sender))
 
+kable(df_message_missing[1:10, ])
+```
+As it is shown in the head of the df_message_missing when it don't have subject we also don't have date and a sender suggesting we won't be able to link those emails with the Enron event. Because they represent only 736 lines which represent less than 1% of the complete table we choose to withdraw them from the df_message table. 
+
+```{r}
+df_message <- df_message %>% filter( #with drawn the lines where we have a missing value for the sender, date, and subject variables.
+  is.na(sender) == FALSE,
+  is.na(subject) == FALSE,
+  is.na(date) == FALSE)
+```
+
+```{r}
+summary(df_message)
+```
+Now we don't have any missing values and the table is ready to be use for further analysis related to the Enron company history. 
+
+# !!!List of thing need to be achieved !!!
+=> See if it should be useful to separate the date variable into month and year.
+=> make the same investigation for the employeelist_2 table.
+=> see to clean a little the environment to keep in memory only the needed table.
+=> pursue with the analytics question in the Exam project rules. 
 
 
 
