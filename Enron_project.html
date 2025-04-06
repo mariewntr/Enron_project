@@ -397,29 +397,23 @@ bankruptcy of the company in 2001. For that have 3 data sets:</p>
 <li><p>the recipients of each emails (to, cc, bcc).</p></li>
 </ul>
 <p>The different insight will are available into a shiny apps.</p>
+<p>For that project we used several libraries listed here: For data
+exploration, analysis and visualisation:</p>
+<ul>
+<li><a href="https://www.tidyverse.org/packages/">tidyverse</a></li>
+</ul>
+<p>To display the result into the Rmarkdown report:</p>
+<ul>
+<li><a href="https://cran.r-project.org/web/packages/knitr/index.html">knitr</a></li>
+</ul>
+<p>To create the shiny apps:</p>
+<ul>
+<li><a href="https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/">shiny</a></li>
+</ul>
 </div>
 </div>
 <div id="data-exploring-and-cleaning" class="section level1">
 <h1>Data exploring and cleaning</h1>
-<div id="libraries-and-dataset" class="section level2">
-<h2>libraries and dataset</h2>
-<pre class="r"><code>#library
-library(tidyverse)</code></pre>
-<pre><code>## Warning: le package &#39;tidyverse&#39; a été compilé avec la version R 4.3.3</code></pre>
-<pre><code>## Warning: le package &#39;ggplot2&#39; a été compilé avec la version R 4.3.3</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.4     ✔ readr     2.1.5
-## ✔ forcats   1.0.0     ✔ stringr   1.5.1
-## ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.3     ✔ tidyr     1.3.1
-## ✔ purrr     1.0.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>#dataset
-load(file = &quot;C:/Users/marie/Documents/DSTI_Cours/R_big_Data/Exam/Enron_project/Enron.Rdata&quot;)</code></pre>
-</div>
 <div id="first-look-at-the-data" class="section level2">
 <h2>First look at the data</h2>
 <p>The aim of this part is to see :</p>
@@ -429,9 +423,7 @@ load(file = &quot;C:/Users/marie/Documents/DSTI_Cours/R_big_Data/Exam/Enron_proj
 </ul>
 <div id="employee-dataset" class="section level3">
 <h3>employee dataset</h3>
-<pre class="r"><code>dim_employee &lt;- dim(employeelist)
-
-summary(employeelist)</code></pre>
+<p>Description of the data set variables and dimension:</p>
 <pre><code>##       eid          firstName           lastName           Email_id        
 ##  Min.   :  1.00   Length:149         Length:149         Length:149        
 ##  1st Qu.: 38.00   Class :character   Class :character   Class :character  
@@ -464,21 +456,90 @@ variable there exist missing value’s identify by R (NA) but also putting
 directly in the data by the set owner which are write N/A. The eid
 variable is identify has type numeric, status is associate with a factor
 type and the other variable are character type.</p>
-<pre class="r"><code>head(employeelist)</code></pre>
-<pre><code>##   eid firstName lastName                Email_id                     Email2
-## 1  13     Marie    Heard   marie.heard@enron.com                           
-## 2   6      Mark   Taylor mark.e.taylor@enron.com      mark.taylor@enron.com
-## 3  19     Lindy   Donoho  lindy.donoho@enron.com          ldonoho@enron.com
-## 4 115      Lisa     Gang     lisa.gang@enron.com                           
-## 5 129   Jeffrey Skilling jeff.skilling@enron.com jeffrey.skilling@enron.com
-## 6  18      Lynn    Blair    lynn.blair@enron.com        lynnblair@enron.com
-##               Email3 EMail4     folder   status
-## 1                              heard-m     &lt;NA&gt;
-## 2 e.taylor@enron.com          taylor-m Employee
-## 3                             donoho-l Employee
-## 4                               gang-l      N/A
-## 5                           skilling-j      CEO
-## 6                              blair-l Director</code></pre>
+<p>Display of some observations in the data frame:</p>
+<table>
+<colgroup>
+<col width="3%" />
+<col width="8%" />
+<col width="7%" />
+<col width="20%" />
+<col width="22%" />
+<col width="15%" />
+<col width="5%" />
+<col width="9%" />
+<col width="7%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">eid</th>
+<th align="left">firstName</th>
+<th align="left">lastName</th>
+<th align="left">Email_id</th>
+<th align="left">Email2</th>
+<th align="left">Email3</th>
+<th align="left">EMail4</th>
+<th align="left">folder</th>
+<th align="left">status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">13</td>
+<td align="left">Marie</td>
+<td align="left">Heard</td>
+<td align="left"><a href="mailto:marie.heard@enron.com" class="email">marie.heard@enron.com</a></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">heard-m</td>
+<td align="left">NA</td>
+</tr>
+<tr class="even">
+<td align="right">6</td>
+<td align="left">Mark</td>
+<td align="left">Taylor</td>
+<td align="left"><a href="mailto:mark.e.taylor@enron.com" class="email">mark.e.taylor@enron.com</a></td>
+<td align="left"><a href="mailto:mark.taylor@enron.com" class="email">mark.taylor@enron.com</a></td>
+<td align="left"><a href="mailto:e.taylor@enron.com" class="email">e.taylor@enron.com</a></td>
+<td align="left"></td>
+<td align="left">taylor-m</td>
+<td align="left">Employee</td>
+</tr>
+<tr class="odd">
+<td align="right">19</td>
+<td align="left">Lindy</td>
+<td align="left">Donoho</td>
+<td align="left"><a href="mailto:lindy.donoho@enron.com" class="email">lindy.donoho@enron.com</a></td>
+<td align="left"><a href="mailto:ldonoho@enron.com" class="email">ldonoho@enron.com</a></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">donoho-l</td>
+<td align="left">Employee</td>
+</tr>
+<tr class="even">
+<td align="right">115</td>
+<td align="left">Lisa</td>
+<td align="left">Gang</td>
+<td align="left"><a href="mailto:lisa.gang@enron.com" class="email">lisa.gang@enron.com</a></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">gang-l</td>
+<td align="left">N/A</td>
+</tr>
+<tr class="odd">
+<td align="right">129</td>
+<td align="left">Jeffrey</td>
+<td align="left">Skilling</td>
+<td align="left"><a href="mailto:jeff.skilling@enron.com" class="email">jeff.skilling@enron.com</a></td>
+<td align="left"><a href="mailto:jeffrey.skilling@enron.com" class="email">jeffrey.skilling@enron.com</a></td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">skilling-j</td>
+<td align="left">CEO</td>
+</tr>
+</tbody>
+</table>
 <p>By looking at the head of the data, we observed that eid is associate
 to numeric data type but the more adapted type seems to be factor
 because it is an ID for employee. In addition, the variables Email2,
@@ -522,9 +583,7 @@ aren’t very helpful for the analysis.</p>
 </div>
 <div id="message-data-set" class="section level3">
 <h3>message data set</h3>
-<pre class="r"><code>dim_message &lt;- dim(message)
-
-summary(message)</code></pre>
+<p>Description of the data set variables and dimension:</p>
 <pre><code>##       mid                               sender            date           
 ##  Min.   :    52   jeff.dasovich@enron.com  :  6273   Min.   :0001-05-30  
 ##  1st Qu.: 88565   j.kaminski@enron.com     :  5838   1st Qu.:2000-12-01  
@@ -545,41 +604,378 @@ summary(message)</code></pre>
 <p>Here we observed that, the mid and date variables identify as a
 numeric, the variables sender and message_id are attached to factor data
 type, and the variable subject is character data type.</p>
-<pre class="r"><code>head(message)</code></pre>
-<pre><code>##   mid                    sender       date
-## 1  52   press.release@enron.com 2000-01-21
-## 2  53 office.chairman@enron.com 2000-01-24
-## 3  54 office.chairman@enron.com 2000-01-24
-## 4  55   press.release@enron.com 2000-02-02
-## 5  56 office.chairman@enron.com 2000-02-07
-## 6  57          foothi19@idt.net 2000-08-25
-##                                      message_id
-## 1 &lt;12435833.1075863606729.JavaMail.evans@thyme&gt;
-## 2 &lt;29664079.1075863606676.JavaMail.evans@thyme&gt;
-## 3 &lt;15300605.1075863606629.JavaMail.evans@thyme&gt;
-## 4 &lt;10522232.1075863606538.JavaMail.evans@thyme&gt;
-## 5 &lt;16056123.1075863606515.JavaMail.evans@thyme&gt;
-## 6 &lt;31680362.1075863730221.JavaMail.evans@thyme&gt;
-##                                                                               subject
-## 1 ENRON HOSTS ANNUAL ANALYST CONFERENCE PROVIDES BUSINESS OVERVIEW AND GOALS FOR 2000
-## 2                                                     Over $50 -- You made it happen!
-## 3                                                     Over $50 -- You made it happen!
-## 4                 ROAD-SHOW.COM Q4i.COM CHOOSE ENRON TO DELIVER FINANCIAL WEB CONTENT
-## 5                                                        Fortune Most Admired Ranking
-## 6                                                   WPTF Friday Credo Veritas Burrito</code></pre>
+<p>Display of some observations in the data frame:</p>
+<table>
+<colgroup>
+<col width="2%" />
+<col width="15%" />
+<col width="6%" />
+<col width="26%" />
+<col width="49%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">mid</th>
+<th align="left">sender</th>
+<th align="left">date</th>
+<th align="left">message_id</th>
+<th align="left">subject</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">52</td>
+<td align="left"><a href="mailto:press.release@enron.com" class="email">press.release@enron.com</a></td>
+<td align="left">2000-01-21</td>
+<td align="left"><a href="mailto:12435833.1075863606729.JavaMail.evans@thyme" class="email">12435833.1075863606729.JavaMail.evans@thyme</a></td>
+<td align="left">ENRON HOSTS ANNUAL ANALYST CONFERENCE PROVIDES BUSINESS
+OVERVIEW AND GOALS FOR 2000</td>
+</tr>
+<tr class="even">
+<td align="right">53</td>
+<td align="left"><a href="mailto:office.chairman@enron.com" class="email">office.chairman@enron.com</a></td>
+<td align="left">2000-01-24</td>
+<td align="left"><a href="mailto:29664079.1075863606676.JavaMail.evans@thyme" class="email">29664079.1075863606676.JavaMail.evans@thyme</a></td>
+<td align="left">Over $50 – You made it happen!</td>
+</tr>
+<tr class="odd">
+<td align="right">54</td>
+<td align="left"><a href="mailto:office.chairman@enron.com" class="email">office.chairman@enron.com</a></td>
+<td align="left">2000-01-24</td>
+<td align="left"><a href="mailto:15300605.1075863606629.JavaMail.evans@thyme" class="email">15300605.1075863606629.JavaMail.evans@thyme</a></td>
+<td align="left">Over $50 – You made it happen!</td>
+</tr>
+<tr class="even">
+<td align="right">55</td>
+<td align="left"><a href="mailto:press.release@enron.com" class="email">press.release@enron.com</a></td>
+<td align="left">2000-02-02</td>
+<td align="left"><a href="mailto:10522232.1075863606538.JavaMail.evans@thyme" class="email">10522232.1075863606538.JavaMail.evans@thyme</a></td>
+<td align="left">ROAD-SHOW.COM Q4i.COM CHOOSE ENRON TO DELIVER FINANCIAL
+WEB CONTENT</td>
+</tr>
+<tr class="odd">
+<td align="right">56</td>
+<td align="left"><a href="mailto:office.chairman@enron.com" class="email">office.chairman@enron.com</a></td>
+<td align="left">2000-02-07</td>
+<td align="left"><a href="mailto:16056123.1075863606515.JavaMail.evans@thyme" class="email">16056123.1075863606515.JavaMail.evans@thyme</a></td>
+<td align="left">Fortune Most Admired Ranking</td>
+</tr>
+</tbody>
+</table>
 <p>By looking at the head of the data we observed that, the mid don’t
 look like numeric data but more has identifier like the eid variable in
 the employeelist table. In the data frame the date variable is associate
-to a date type.</p>
+to a date type. Because the description seems to treat the variable date
+as a numeric type but the observation look like real date in the data
+display above we check with the class() function if R treat it correctly
+by evaluating if his data type is Date:</p>
+<pre class="r"><code>class(message$date) == &quot;Date&quot;</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p>The result confirm us R treat the date variable in the good data type
+meaning Date type. For this variable it is not necessary to adapt the
+data type.</p>
+<p>The variable mid and message_id could be redundancy. To verify that
+we will count the number of distinct value for both variable to see if a
+mid could be attached to several message_id.</p>
+<pre class="r"><code>message%&gt;% select(mid, message_id) %&gt;% #select only the variable we need.
+  transform(mid = as.factor(mid)) %&gt;% #transform the mid into factor data type.
+  group_by(message_id) %&gt;% 
+  count(mid) %&gt;% #count the number of mid per message_id group, create a n variable with the result.
+  filter(n != 1) #filter to get the rows with a value different than 1.</code></pre>
+<pre><code>## # A tibble: 0 × 3
+## # Groups:   message_id [0]
+## # ℹ 3 variables: message_id &lt;fct&gt;, mid &lt;fct&gt;, n &lt;int&gt;</code></pre>
+<p>This shown that, each message_id is attached to one and only one mid
+and confirm to us the redundancy of the 2 variables in the data frame.
+To lighten the data we can choose one of them to be kept in the
+dataframe for the analysis.</p>
 </div>
 <div id="recipient-info-data-set" class="section level3">
 <h3>recipient info data set</h3>
+<p>Description of the data set variables and dimension:</p>
+<pre><code>##       rid               mid         rtype        
+##  Min.   :     67   Min.   :    52   BCC: 253713  
+##  1st Qu.: 718289   1st Qu.:105438   CC : 253735  
+##  Median :1515296   Median :198263   TO :1556994  
+##  Mean   :1543862   Mean   :196168                
+##  3rd Qu.:2309682   3rd Qu.:280673                
+##  Max.   :3242063   Max.   :404927                
+##                                                  
+##                        rvalue       
+##  no.address@enron.com     :  19198  
+##  jeff.dasovich@enron.com  :  11137  
+##  richard.shapiro@enron.com:  11015  
+##  steven.j.kean@enron.com  :  10873  
+##  james.d.steffes@enron.com:  10615  
+##  tana.jones@enron.com     :   9781  
+##  (Other)                  :1991823</code></pre>
+<p>This data set contain 2064442 rows and 4 columns. The summary of the
+data reveal that, the rid and mid are consider as numeric variable by R
+and the variables rtype and rvalue are consider as factor data type.</p>
+<p>Display of some observations in the data frame:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">rid</th>
+<th align="right">mid</th>
+<th align="left">rtype</th>
+<th align="left">rvalue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">67</td>
+<td align="right">52</td>
+<td align="left">TO</td>
+<td align="left"><a href="mailto:all.worldwide@enron.com" class="email">all.worldwide@enron.com</a></td>
+</tr>
+<tr class="even">
+<td align="right">68</td>
+<td align="right">53</td>
+<td align="left">TO</td>
+<td align="left"><a href="mailto:all.downtown@enron.com" class="email">all.downtown@enron.com</a></td>
+</tr>
+<tr class="odd">
+<td align="right">69</td>
+<td align="right">54</td>
+<td align="left">TO</td>
+<td align="left"><a href="mailto:all.enron-worldwide@enron.com" class="email">all.enron-worldwide@enron.com</a></td>
+</tr>
+<tr class="even">
+<td align="right">70</td>
+<td align="right">55</td>
+<td align="left">TO</td>
+<td align="left"><a href="mailto:all.worldwide@enron.com" class="email">all.worldwide@enron.com</a></td>
+</tr>
+<tr class="odd">
+<td align="right">71</td>
+<td align="right">56</td>
+<td align="left">TO</td>
+<td align="left"><a href="mailto:all_enron_north.america@enron.com" class="email">all_enron_north.america@enron.com</a></td>
+</tr>
+</tbody>
+</table>
+<p>By looking at the head of this dataset we can see that rid and mid
+are identifier, with the result return by the summary function we need
+to transform those variables into factor data for having in the good
+type. Also, the mid variable is a foreign key allowed to link this table
+with the message table. Binding together this 2 table will allow us to
+have the sender and the receiver of the email as well as which type of
+receiver (direct with the to or “indirect” with the CC and BCC). The
+last variable rvalue is the email address of the receiver which can be
+general (<em>e.g.,</em> <a href="mailto:all.worldwide@enron.com" class="email">all.worldwide@enron.com</a>, see in the head of the table)
+or specific to a person (<em>e.g.,</em> <a href="mailto:jeff.dasovich@enron.com" class="email">jeff.dasovich@enron.com</a>, see as the top specific
+receiver in the summary of that table).</p>
 </div>
 <div id="reference-info-data-set" class="section level3">
 <h3>reference info data set</h3>
-<p><strong>By exploring the data set we identify some issue in the data
-needed to be handle before the analysis such as data type change and
-missing values handling.</strong></p>
+<p>Description of the data set variables and dimension:</p>
+<pre><code>##       rfid            mid          reference        
+##  Min.   :    2   Min.   :    79   Length:54778      
+##  1st Qu.:14305   1st Qu.: 60580   Class :character  
+##  Median :30987   Median :178176   Mode  :character  
+##  Mean   :30860   Mean   :179738                     
+##  3rd Qu.:46728   3rd Qu.:275557                     
+##  Max.   :63024   Max.   :404920</code></pre>
+<p>This data set contain 54778 rows and 3 columns.</p>
+<p>the summary pointed that, the variable rfid and mid are qualified as
+numeric type and the reference variable as a character type.</p>
+<p>Display of some observations in the data frame:</p>
+<table>
+<colgroup>
+<col width="0%" />
+<col width="0%" />
+<col width="0%" />
+<col width="99%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">rfid</th>
+<th align="right">mid</th>
+<th align="left">reference</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">5</td>
+<td align="right">14</td>
+<td align="right">845</td>
+<td align="left">From: Monaco, John [EM] [<a href="mailto:john.monaco@citi.com" class="uri">mailto:john.monaco@citi.com</a>]Sent: Thursday, March 07,
+2002 6:40 AMTo: Badeer, RobertSubject: FW: RE: Whats up!!!!!Still
+around!!!!—–Original Message—–From: <a href="mailto:enron.mailsweeper.admin@enron.com" class="email">enron.mailsweeper.admin@enron.com</a>[<a href="mailto:enron.mailsweeper.admin@enron.com" class="uri">mailto:enron.mailsweeper.admin@enron.com</a>] Sent:
+Thursday, March 07, 2002 9:36 AMTo: Monaco, John [EM]Subject: RE:RE:
+Whats up!!!!!The enron.com recipient(s)<a href="mailto:rbadeer@exchange.enron.comhave" class="email">rbadeer@exchange.enron.comhave</a> moved to a new
+organization. The new email address follows the <a href="mailto:formatfirstname.lastname@ubswenergy.com" class="email">formatfirstname.lastname@ubswenergy.com</a> <a href="mailto:orfirstname.initial.lastname@ubswenergy.com" class="email">orfirstname.initial.lastname@ubswenergy.com</a> (as per
+their original enron.comemail address). Email sent to recipient(s) at
+enron.com will not bedelivered.</td>
+</tr>
+<tr class="even">
+<td align="left">6</td>
+<td align="right">15</td>
+<td align="right">846</td>
+<td align="left">From: Rangel, Ina Sent: Thursday, March 07, 2002 8:11
+AMTo: Badeer, RobertSubject: Expense ReceiptsBob:I received your expense
+receipts today. Will submit them today.Ina Rangel</td>
+</tr>
+<tr class="odd">
+<td align="left">7</td>
+<td align="right">16</td>
+<td align="right">847</td>
+<td align="left">From: Grigsby, Mike Sent: Friday, March 08, 2002 9:08
+AMTo: Badeer, RobertSubject: RE: BADGEGo with Ina —–Original
+Message—–From: Badeer, Robert Sent: Friday, March 08, 2002 11:08 AMTo:
+Grigsby, MikeSubject: RE: BADGEGrigs, Ina said it would be on the 5th
+floor of the new building. Which is right? —–Original Message—–From:
+Grigsby, Mike Sent: Friday, March 08, 2002 6:46 AMTo: Badeer,
+RobertSubject: BADGEYour badge will be waiting for you at the front desk
+in the north tower on mon. if not, then call and we will retrieve
+you.Michael D. Grigsby, Executive DirectorUBS Warburg Energy, LLCWork:
+713-853-7031Mobile: 713-408-6256</td>
+</tr>
+<tr class="even">
+<td align="left">8</td>
+<td align="right">17</td>
+<td align="right">848</td>
+<td align="left">From: Grigsby, Mike Sent: Friday, March 08, 2002 6:46
+AMTo: Badeer, RobertSubject: BADGEYour badge will be waiting for you at
+the front desk in the north tower on mon. if not, then call and we will
+retrieve you.Michael D. Grigsby, Executive DirectorUBS Warburg Energy,
+LLCWork: 713-853-7031Mobile: 713-408-6256</td>
+</tr>
+<tr class="odd">
+<td align="left">9</td>
+<td align="right">18</td>
+<td align="right">849</td>
+<td align="left">From: Rangel, Ina Sent: Thursday, March 07, 2002 12:56
+PMTo: Badeer, RobertSubject: FW: Badge AccessWhen you get here on Monday
+morning, come to the 5th floor reception of the new building. If your
+badge is not there, then I will come and pick you up when you get here
+and bring you up. Your badge will be ready Monday for sure, whether it
+be morning or afternoon I am not sure of.-Ina —–Original Message—–From:
+Curless, Amanda Sent: Thursday, March 07, 2002 2:50 PMTo: Rangel,
+InaSubject: RE: Badge AccessIna,We can most likely have this by Monday
+morning and he can pick this up at the 5th floor reception. If he has
+any problems he can call me. Thanks!Mandy —–Original Message—–From:
+Rangel, Ina Sent: Thursday, March 07, 2002 2:39 PMTo: Curless,
+AmandaSubject: RE: Badge Access &lt;&lt; File: Badge Access Form.doc
+&gt;&gt; I filled out all of the information that I had on him. Will he
+be able to have his badge by Monday morning and where will he go to pick
+it up.Ina —–Original Message—–From: Curless, Amanda Sent: Thursday,
+March 07, 2002 2:00 PMTo: Rangel, InaSubject: Badge Access &lt;&lt;
+File: Badge Access Form.doc &gt;&gt; Ina,Pleae fill out and return to me
+at ECS 05848. You can e-mail this to me if this is easier.
+Thanks!Mandy</td>
+</tr>
+<tr class="even">
+<td align="left">10</td>
+<td align="right">19</td>
+<td align="right">851</td>
+<td align="left">From: Hyatt, Kevin Sent: Wednesday, July 25, 2001 1:00
+PMTo: Nielsen, JeffSubject: RE: Mid 4 to Mid 3 QuoteJeff, can you fill
+in the rates for the 5,7, and 10 year terms for me. These would be
+notional of course. Let me know if you have questions.thxKevin
+713-853-5559 Term/yrs. 2 5 7 10 Demand: Firm* $.02 - .03 $.04-.05
+$.06-.07 $.07-.08 TI $.035 - .045 <span class="math inline">\(.065-\)</span>.075 $.075-.085 $.095-.105 Volume is
+min. 0 to max of 200,000/d * plus minimum commodity Primary to El Paso
+Waha would be slightly higher Rates are plus fuel —–Original
+Message—–From: Nielsen, Jeff Sent: Monday, July 23, 2001 4:39 PMTo:
+Hyatt, KevinSubject: Mid 4 to Mid 3 QuoteKevin,Jo Williams said that you
+needed a quote for transportation from Mid 4 to Mid 3 in the Waha area.
+On a firm basis we would be would in the $.02 to $.03 demand range plus
+minimum commodity. For a TI rate use between $.035 and $.045. If you
+would like primary to El Paso Waha, that rate would be a little higher.
+We have been able to get additional value out of that interconnect
+because of the gas prices in California. Please let me know if you need
+any additional information.Jeff 402-398-7434</td>
+</tr>
+</tbody>
+</table>
+<p>By looking at the head of that table we can see that:</p>
+<ul>
+<li><p>the rfid and mid aren’t numeric variable but look like
+identifier. It will be necessary to change their data type for factor
+for it be better adapted.</p></li>
+<li><p>the reference variable describe the content of each
+message.</p></li>
+<li><p>the existence here of the mid variable allow us to merge that
+table with the message and/or the recipientinfo table.</p></li>
+</ul>
+<p><strong>By exploring those data set we identify some issues needed to
+be handle before the analysis such as data type change, missing values
+handling, variable redundancy, and data set merging.</strong></p>
+<p>We choose to :</p>
+<ul>
+<li><p>change the data type of the identifer variable from numeric to
+factor.</p></li>
+<li><p>withdraw the message_id variable in the message table to lighten
+the dataset.</p></li>
+<li><p>for the moment, withdraw the variable Email3 and EMail4 variable
+in the employeelist table because they contain al lot of blank value and
+every employee have one Email id filled. We choose to keep for the
+moment the Email2 variable because it contain only 52 blank observation
+over the 149 which makes average 25% of the data.</p></li>
+<li><p>Creates a table which bind all the information about the message
+by merging together the table message, recipientinfo and referenceinfo
+through the mid foreign key.</p></li>
+</ul>
+</div>
+<div id="data-engineering-and-cleaning" class="section level3">
+<h3>Data engineering and cleaning</h3>
+<div id="employeelist-table" class="section level4">
+<h4>Employeelist table</h4>
+<pre class="r"><code>employeelist_2 &lt;- employeelist %&gt;% 
+  select(-c(Email3, EMail4)) %&gt;% #the variable we don&#39;t need in the data
+  transform(eid = as.factor(eid)) #data type change for the variable eid to factor</code></pre>
+</div>
+<div id="message-table" class="section level4">
+<h4>message table</h4>
+<pre class="r"><code>message_2 &lt;- message %&gt;%
+  select(-c(message_id)) %&gt;% #withdraw the variable we don&#39;t need
+  transform(mid = as.factor(mid)) #change the data type for factor</code></pre>
+</div>
+<div id="recipientinfo" class="section level4">
+<h4>recipientinfo</h4>
+<pre class="r"><code>recipientinfo_2 &lt;- recipientinfo %&gt;%
+  #change the variable data type for factor
+  transform(rid = as.factor(rid),
+    mid = as.factor(mid))</code></pre>
+</div>
+<div id="referenceinfo" class="section level4">
+<h4>referenceinfo</h4>
+<pre class="r"><code>referenceinfo_2 &lt;- referenceinfo %&gt;%
+  #change the variable data type for factor
+  transform(rfid = as.factor(rfid),
+    mid = as.factor(mid))</code></pre>
+<p>Verification of the data type change and display of the new dimension
+for each dataframe:</p>
+<pre><code>## [1] &quot;Data type and dimension of the new employeelist table&quot;</code></pre>
+<pre><code>## &#39;data.frame&#39;:    149 obs. of  7 variables:
+##  $ eid      : Factor w/ 149 levels &quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,..: 13 6 19 115 129 18 33 148 52 21 ...
+##  $ firstName: chr  &quot;Marie&quot; &quot;Mark&quot; &quot;Lindy&quot; &quot;Lisa&quot; ...
+##  $ lastName : chr  &quot;Heard&quot; &quot;Taylor&quot; &quot;Donoho&quot; &quot;Gang&quot; ...
+##  $ Email_id : chr  &quot;marie.heard@enron.com&quot; &quot;mark.e.taylor@enron.com&quot; &quot;lindy.donoho@enron.com&quot; &quot;lisa.gang@enron.com&quot; ...
+##  $ Email2   : chr  &quot;&quot; &quot;mark.taylor@enron.com&quot; &quot;ldonoho@enron.com&quot; &quot;&quot; ...
+##  $ folder   : chr  &quot;heard-m&quot; &quot;taylor-m&quot; &quot;donoho-l&quot; &quot;gang-l&quot; ...
+##  $ status   : Factor w/ 10 levels &quot;CEO&quot;,&quot;Director&quot;,..: NA 3 3 7 1 2 7 3 3 2 ...</code></pre>
+<pre><code>## [1] &quot;Data type and dimension of the new message table&quot;</code></pre>
+<pre><code>## &#39;data.frame&#39;:    252759 obs. of  4 variables:
+##  $ mid    : Factor w/ 252759 levels &quot;52&quot;,&quot;53&quot;,&quot;54&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ sender : Factor w/ 17527 levels &quot;-persson@ricemail.ricefinancial.com&quot;,..: 13252 12358 12358 13252 12358 5565 5088 2900 2868 2361 ...
+##  $ date   : Date, format: &quot;2000-01-21&quot; &quot;2000-01-24&quot; ...
+##  $ subject: chr  &quot;ENRON HOSTS ANNUAL ANALYST CONFERENCE PROVIDES BUSINESS OVERVIEW AND GOALS FOR 2000&quot; &quot;Over $50 -- You made it happen!&quot; &quot;Over $50 -- You made it happen!&quot; &quot;ROAD-SHOW.COM Q4i.COM CHOOSE ENRON TO DELIVER FINANCIAL WEB CONTENT&quot; ...</code></pre>
+<pre><code>## [1] &quot;Data type and dimension of the new recipientinfo table&quot;</code></pre>
+<pre><code>## &#39;data.frame&#39;:    2064442 obs. of  4 variables:
+##  $ rid   : Factor w/ 2064442 levels &quot;67&quot;,&quot;68&quot;,&quot;69&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ mid   : Factor w/ 252759 levels &quot;52&quot;,&quot;53&quot;,&quot;54&quot;,..: 1 2 3 4 5 5 6 7 8 9 ...
+##  $ rtype : Factor w/ 3 levels &quot;BCC&quot;,&quot;CC&quot;,&quot;TO&quot;: 3 3 3 3 3 3 3 3 3 3 ...
+##  $ rvalue: Factor w/ 68084 levels &quot;--migrated--sgrendel@ercot.com&quot;,..: 2060 2046 2049 2060 2065 18193 10002 56479 54146 63168 ...</code></pre>
+<pre><code>## [1] &quot;Data type and dimension of the new referenceinfo table&quot;</code></pre>
+<pre><code>## &#39;data.frame&#39;:    54778 obs. of  3 variables:
+##  $ rfid     : Factor w/ 54778 levels &quot;2&quot;,&quot;3&quot;,&quot;8&quot;,&quot;13&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ mid      : Factor w/ 54778 levels &quot;79&quot;,&quot;99&quot;,&quot;533&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ reference: chr  &quot;&gt; From: Le Vine, Debi&gt; Sent: Thursday, August 17, 2000 6:29 PM&gt; To: ISO Market Participants&gt; Subject: Request f&quot;| __truncated__ &quot;&gt; From: Golden, Mark&gt; Sent: Thursday, August 24, 2000 4:02 PM&gt; To: Pergher, Gunther&gt; Subject: Calif Gov Hopes T&quot;| __truncated__ &quot;From: Sole, JeanneSent: Friday, August 18, 2000 4:15 PMTo: Fuller, Don; Happ, SusanSubject: Memorandum to stake&quot;| __truncated__ &quot;From: \tGrigsby, Mike  Sent:\tThursday, March 07, 2002 1:06 PMTo:\tLove, Phillip M.; UBSW Energy Information Ri&quot;| __truncated__ ...</code></pre>
+</div>
 </div>
 </div>
 </div>

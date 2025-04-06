@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Enron is a natural-gas-transmission company founded in 1985 in the US. In 1990's the US congress adopt a series of law to deregulate the sale of natural gas. This makes Enron loosing it's exclusivity right on the natural gas pipeline. At this time Jeffrey Skilling, who was initially a consultant and later became the company's chief operating officer, transformed Enron into a trader energy derivative to be an intermediary between natural-gas producers and their customers. Soon after that, Enron become a leader in this market and makes huge profit on its trade. This golden age for the company allow them to recruit Andrew Fastow who quickly became the chief financial officer. Moreover, they diversify their activity to include electricity, coal, paper, and steel. Perhaps, success have is limit and in late 90's the company profit start to shrank... The pressure from shareholders, company executives began to rely on dubious accounting practices. Especially they used the "market-tomarket accounting" which allowed the company to write unrealized future gain from some trading contract into current income statement, thus giving the illusion of higher current profits. In August, 2001 some people at the head of the company start to worry about a possible accounting scandals due to this practice. In October, 2001 the Securities and Exchange Commission began investigating the transactions of Enron. This was the starting event who lead the company to the bankruptcy which really start in December, 2001.  
 
-Source [Britanica Enron scandal](https://www.britannica.com/event/Enron-scandal).
+Source [Britannica Enron scandal](https://www.britannica.com/event/Enron-scandal).
 
 ## Project aims 
 The principal aim of this project is to explore the Enron's email data set for extracting insight about the fiscal fraud investigation and bankruptcy of the company in 2001. For that have 3 data sets:
@@ -28,13 +28,27 @@ The principal aim of this project is to explore the Enron's email data set for e
 
 The different insight will are available into a shiny apps. 
 
+For that project we used several libraries listed here:
+For data exploration, analysis and visualisation:
+
+* [tidyverse](https://www.tidyverse.org/packages/)
+
+To display the result into the Rmarkdown report:
+
+* [knitr](https://cran.r-project.org/web/packages/knitr/index.html)
+
+To create the shiny apps:
+
+* [shiny](https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/)
+
 
 # Data exploring and cleaning
 
-## libraries and dataset
-```{r}
+```{r include=FALSE}
 #library
 library(tidyverse)
+library(knitr)
+library(shiny)
 
 #dataset
 load(file = "C:/Users/marie/Documents/DSTI_Cours/R_big_Data/Exam/Enron_project/Enron.Rdata")
@@ -50,7 +64,8 @@ The aim of this part is to see :
 
 ### employee dataset
 
-```{r}
+Description of the data set variables and dimension:
+```{r echo=FALSE}
 dim_employee <- dim(employeelist)
 
 summary(employeelist)
@@ -60,9 +75,9 @@ This data set contain `r dim_employee[1]` rows and `r dim_employee[2]` columns.
 This data set contains employee ID (eid), the first and last name of the employee as well as their status, the email addresses for each employee, and the folder where their email are stored. In the status variable there exist missing value's identify by R (NA) but also putting directly in the data by the set owner which are write N/A.
 The eid variable is identify has type numeric, status is associate with a factor type and the other variable are character type. 
 
-
-```{r}
-head(employeelist)
+Display of some observations in the data frame:
+```{r echo=FALSE}
+kable(employeelist[1:5, ])
 ```
 
 By looking at the head of the data, we observed that eid is associate to numeric data type but the more adapted type seems to be factor because it is an ID for employee. In addition, the variables Email2, Email3, EMail4 contain a lot of blank. 
@@ -73,14 +88,15 @@ employeelist %>% transform(
   Email2 = as.factor(Email2),
   Email3 = as.factor(Email3),
   EMail4 = as.factor(EMail4)
-) %>% summary
+) %>% summary()
 ```
 We can see that, in the Email2, Email3, and EMail4 variable don't have missing value but they are blank character. In the Email3 and EMail4 more than the half of the value are blank, maybe those variable aren't very helpful for the analysis. 
 
 
 ### message data set
 
-```{r}
+Description of the data set variables and dimension:
+```{r echo=FALSE}
 dim_message <- dim(message)
 
 summary(message)
@@ -89,33 +105,147 @@ This data set contain `r dim_message[1]` rows and `r dim_message[2]` columns.
 
 Here we observed that, the mid and date variables identify as a numeric, the variables sender and message_id are attached to factor data type, and the variable subject is character data type. 
 
-```{r}
-head(message)
+Display of some observations in the data frame:
+```{r echo=FALSE}
+kable(message[1:5, ])
 ```
 By looking at the head  of the data we observed that, the mid don't look like numeric data but more has identifier like the eid variable in the employeelist table. In the data frame the date variable is associate to a date type. 
+Because the description seems to treat the variable date as a numeric type but the observation look like real date in the data display above we check with the class() function if R treat it correctly by evaluating if his data type is Date:
+```{r}
+class(message$date) == "Date"
+```
+The result confirm us R treat the date variable in the good data type meaning Date type. For this variable it is not necessary to adapt the data type. 
+
+The variable mid and message_id could be redundancy. To verify that we will count the number of distinct value for both variable to see if a mid could be attached to several message_id. 
+
+```{r}
+message%>% select(mid, message_id) %>% #select only the variable we need.
+  transform(mid = as.factor(mid)) %>% #transform the mid into factor data type.
+  group_by(message_id) %>% 
+  count(mid) %>% #count the number of mid per message_id group, create a n variable with the result.
+  filter(n != 1) #filter to get the rows with a value different than 1.
+```
+This shown that, each message_id is attached to one and only one mid and confirm to us the redundancy of the 2 variables in the data frame. To lighten the data we can choose one of them to be kept in the dataframe for the analysis. 
+
 
 ### recipient info data set
+
+Description of the data set variables and dimension:
+```{r echo=FALSE}
+dim_recipient <- dim(recipientinfo)
+
+summary(recipientinfo)
+```
+This data set contain `r dim_recipient[1]` rows and `r dim_recipient[2]` columns. 
+The summary of the data reveal that, the rid and mid are consider as numeric variable by R and the variables rtype and rvalue are consider as factor data type. 
+
+Display of some observations in the data frame:
+```{r echo=FALSE}
+kable(recipientinfo[1:5, ])
+```
+By looking at the head of this dataset we can see that rid and mid are identifier, with the result return by the summary function we need to transform those variables into factor data for having in the good type. Also, the mid variable is a foreign key allowed to link this table with the message table. Binding together this 2 table will allow us to have the sender and the receiver of the email as well as which type of receiver (direct with the to or "indirect" with the CC and BCC). The last variable rvalue is the email address of the receiver which can be general (*e.g.,* all.worldwide@enron.com, see in the head of the table) or specific to a person (*e.g.,* jeff.dasovich@enron.com, see as the top specific receiver in the summary of that table). 
 
 
 ### reference info data set
 
+Description of the data set variables and dimension:
+```{r echo=FALSE}
+dim_reference <- dim(referenceinfo)
+
+summary(referenceinfo)
+```
+This data set contain `r dim_reference[1]` rows and `r dim_reference[2]` columns. 
+
+the summary pointed that, the variable rfid and mid are qualified as numeric type and the reference variable as a character type.
+
+Display of some observations in the data frame:
+```{r echo=FALSE}
+kable(referenceinfo[5:10, ])
+```
+By looking at the head of that table we can see that:
+
+- the rfid and mid aren't numeric variable but look like identifier. It will be necessary to change their data type for factor for it be better adapted.
+
+- the reference variable describe the content of each message.
+
+- the existence here of the mid variable allow us to merge that table with the message and/or the recipientinfo table.
 
 
-**By exploring the data set we identify some issue in the data needed to be handle before the analysis such as data type change and missing values handling.**
 
-=> regarder comment mieux visualiser un dataframe dans le markdown
-=> finir l'explo générale pour identifier les étapes de cleaning
+**By exploring those data set we identify some issues needed to be handle before the analysis such as data type change, missing values handling, variable redundancy, and data set merging.**
+
+We choose to :
+
+- change the data type of the identifer variable from numeric to factor. 
+
+- withdraw the message_id variable in the message table to lighten the dataset.
+
+- for the moment, withdraw the variable Email3 and EMail4 variable in the employeelist table because they contain al lot of blank value and every employee have one Email id filled. We choose to keep for the moment the Email2 variable because it contain only 52 blank observation over the 149 which makes average 25% of the data. 
+
+- don't keep the referenceinfo table because it contain only 54,778 observation which makes only 2% of the recipientinfo table. This suggest that, this table isn't exhuastive and adding those info in a merging table with recipientinfo will create a lot of missing values. 
+
+- Creates a table which bind all the information about the message by merging together the table message and recipientinfo through the mid foreign key. 
+
+### Data engineering and cleaning
+
+#### Employeelist table
+```{r}
+employeelist_2 <- employeelist %>% 
+  select(-c(Email3, EMail4)) %>% #the variable we don't need in the data
+  transform(eid = as.factor(eid)) #data type change for the variable eid to factor
+```
+
+#### message table
+
+```{r}
+message_2 <- message %>%
+  select(-c(message_id)) %>% #withdraw the variable we don't need
+  transform(mid = as.factor(mid)) #change the data type for factor
+```
 
 
+#### recipientinfo
+
+```{r}
+recipientinfo_2 <- recipientinfo %>%
+  #change the variable data type for factor
+  transform(rid = as.factor(rid),
+    mid = as.factor(mid))
+```
+
+#### referenceinfo
+
+```{r}
+referenceinfo_2 <- referenceinfo %>%
+  #change the variable data type for factor
+  transform(rfid = as.factor(rfid),
+    mid = as.factor(mid))
+```
 
 
+#### Merging the dataframe related to the message together
 
+```{r}
+#first between the recipientinfo_2 and message_2
+df_message <- left_join(recipientinfo_2, message_2, #the table we merged 
+                        by = "mid") #the variable used for merging
+```
 
+Verification of the merging operation by comparing the number of observation in the recipientinfo_2 table and the df_message table. We compared their number of observation (or rows) to be sure we don't get any rows duplication.
+We take the recipientinfo_2 because is the largest table used in the merging in terms of rows. 
+```{r}
+dim(recipientinfo_2)[1] == dim(df_message)[1]
+```
+The above operation return true confirming us the 2 dataframe have the same number of rows meaning it don't happen any row duplication during the merging operation. 
 
-
-
-
-
+Verification of the data type change and display of the new dimension for the 2 new dataframe: 
+```{r echo=FALSE}
+#display the datatype of each variable in each new dataframe
+print("Data type and dimension of the new employeelist table")
+str(employeelist_2)
+print("Data type and dimension of the new df_message table")
+str(df_message)
+```
 
 
 
