@@ -90,7 +90,7 @@ employeelist %>% transform(
   EMail4 = as.factor(EMail4)
 ) %>% summary()
 ```
-We can see that, in the Email2, Email3, and EMail4 variable don't have missing value but they are blank character. In the Email3 and EMail4 more than the half of the value are blank, maybe those variable aren't very helpful for the analysis. 
+We can see that, in the Email2, Email3, and EMail4 variable don't have missing value but they are blank character. In the Email3 and EMail4 more than the half of the value are blank, maybe those variable aren't very helpful for the analysis. In the variable status the NA are differently declared where we have 31 values with N/A and only 1 NA. For that variable we will need to replace the N/A by real NA values to homogenized the data. 
 
 
 ### message data set
@@ -208,8 +208,24 @@ We choose to :
 ```{r}
 employeelist_2 <- employeelist %>% 
   select(-c(Email3, EMail4)) %>% #the variable we don't need in the data
-  transform(eid = as.factor(eid)) #data type change for the variable eid to factor
+  transform(eid = as.factor(eid)) %>% #data type change for the variable eid to factor
+  mutate(status = if_else((status == "N/A"), NA, status)) #homogenezed the declaration of the NA in the variable status
+
 ```
+
+
+Description of the new table employee list:
+```{r}
+summary(employeelist_2)
+```
+
+
+Verification of the data type of the table variables:
+```{r}
+#return the data type for every variable in the table
+str(employeelist_2)
+```
+The result from summary and the str function show us the data type change, the NA homogenized, and the suppression of the variable is done correctly. We can now used this table to pursue the analysis. 
 
 #### message table
 
@@ -303,11 +319,74 @@ summary(df_message)
 ```
 Now we don't have any missing values and the table is ready to be use for further analysis related to the Enron company history. 
 
+```{r echo=FALSE}
+#cleaning of the object no more necessary in the environment
+rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo, referenceinfo_2)
+```
+
+### Data analysis
+
+#### the employee liste 
+
+Number of employee per status :
+```{r}
+employeelist_2 %>% select(status) %>% #select the needed variable
+  group_by(status) %>% count() %>% #count the number of employee per status
+  ungroup() %>%
+  #calculate the percentage for each status
+  mutate(perc = `n`/sum(`n`),
+  labels = scales::percent(perc)) %>%
+  #bar chart
+  ggplot(aes(reorder(status, perc ,sum),perc, fill = status)) +
+  geom_bar(stat = "identity") +
+  #to invert the axis's position
+  coord_flip()+ 
+  #customize the theme, title and axis labels
+  geom_text(aes(label = labels), vjust = 0.5, size = 4) + #display the percentage for each category at the end of the corresponding bar
+  scale_y_continuous(labels = scales::percent_format())+
+  ggtitle("Number of employee per status in Enron company")+
+  labs(y = "Percentage (%)",x = "Employee status") +
+  theme_light()+
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+```
+The above bar chart shows us that:
+
+- most of the employee have an employee or unknown status (respectively 27.48% and 21.48%)
+
+- they have few lawyer (less than 1% of the total number of employee) 
+
+- surprisingly a lot of employee have a vice president status (average 15% of the employee) 
+
+- it has a similar number of manager, director, and trader in the company (average 9% for each)
+
+- at the head of the company it has several CEO, President, and managing director (average 2% for each)
+
+
+
+
+
+
+
 # !!!List of thing need to be achieved !!!
+=> merge the employee list with the message DF through the email address
+
+=> for the analysis on employeelist table:
+  - count the number of email address for each employee
+
+=> for the message_df:
+  - look at the number of email per email address
+  - look at the type of email (TO, CC, BC)
+  - look at the number of eamil exchange between month and year -> see if it as significant change around the historic date
+
+=> pursue with the analytics question in the Exam project rules.   
+
 => See if it should be useful to separate the date variable into month and year.
-=> make the same investigation for the employeelist_2 table.
+
 => see to clean a little the environment to keep in memory only the needed table.
-=> pursue with the analytics question in the Exam project rules. 
+
 
 
 
