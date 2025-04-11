@@ -6,7 +6,11 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#definition of the set up for all the figure create in the Rmarkdown
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width=10,
+                      fig.asp=0.8,
+                      out.width="80%")
 ```
 
 # Introduction
@@ -29,9 +33,11 @@ The principal aim of this project is to explore the Enron's email data set for e
 The different insight will are available into a shiny apps. 
 
 For that project we used several libraries listed here:
-For data exploration, analysis and visualisation:
+For data exploration, analysis and visualization:
 
 * [tidyverse](https://www.tidyverse.org/packages/)
+
+* [ggpubr](https://rpkgs.datanovia.com/ggpubr/)
 
 To display the result into the Rmarkdown report:
 
@@ -47,6 +53,7 @@ To create the shiny apps:
 ```{r include=FALSE}
 #library
 library(tidyverse)
+library(ggpubr)
 library(knitr)
 library(shiny)
 
@@ -159,7 +166,6 @@ kable(recipientinfo[1:10, ])
 ```
 By looking at the head of this dataset we can see that rid and mid are identifier, with the result return by the summary function we need to transform those variables into factor data for having in the good type. Also, the mid variable is a foreign key allowed to link this table with the message table. Binding together this 2 table will allow us to have the sender and the receiver of the email as well as which type of receiver (direct with the to or "indirect" with the CC and BCC). The last variable rvalue is the email address of the receiver which can be general (*e.g.,* all.worldwide@enron.com, see in the head of the table) or specific to a person (*e.g.,* jeff.dasovich@enron.com, see as the top specific receiver in the summary of that table). 
 
-
 ### reference info data set
 
 Description of the data set variables and dimension:
@@ -184,6 +190,7 @@ By looking at the head of that table we can see that:
 
 - the existence here of the mid variable allow us to merge that table with the message and/or the recipientinfo table.
 
+- in the message and recipientinfo table we have email address like in the employeelist info. We could thinks that, this table can be merged through this.
 
 
 **By exploring those data set we identify some issues needed to be handle before the analysis such as data type change, missing values handling, variable redundancy, and data set merging.**
@@ -200,7 +207,7 @@ We choose to :
 
 - don't keep the referenceinfo table because it contain only 54,778 observation which makes only 2% of the recipientinfo table. This suggest that, this table isn't exhuastive and adding those info in a merging table with recipientinfo will create a lot of missing values. 
 
-- Creates a table which bind all the information about the message by merging together the table message and recipientinfo through the mid foreign key. 
+- Creates a table which bind all the information about the message by merging together the table message and recipientinfo through the mid foreign key.
 
 ### Data engineering and cleaning
 
@@ -321,10 +328,15 @@ Now we don't have any missing values and the table is ready to be use for furthe
 
 ```{r echo=FALSE}
 #cleaning of the object no more necessary in the environment
-rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo, referenceinfo_2)
+rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo)
 ```
 
 ### Data analysis
+```{r}
+#in this part we will draw many plot, every will have the same theme
+theme_set(theme_light())
+```
+
 
 #### the employee liste 
 
@@ -346,7 +358,6 @@ employeelist_2 %>% select(status) %>% #select the needed variable
   scale_y_continuous(labels = scales::percent_format())+
   ggtitle("Number of employee per status in Enron company")+
   labs(y = "Percentage (%)",x = "Employee status") +
-  theme_light()+
   scale_fill_brewer(palette = "Set3", 
                     #to display the NA in grey on the graph
                     na.value = "grey50")+
@@ -365,8 +376,89 @@ The above bar chart shows us that:
 - at the head of the company it has several CEO, President, and managing director (average 2% for each)
 
 
+### Exploring the email address to see if is it possible to link the table employeelist and df_message through it.
+
+First of all in the df_message we count the distinct email address for the sender and the recipient as well as often they appear in the table:
+```{r}
+#count the number of disctint sender email address
+sender_count <- df_message %>% select(sender) %>% #keep only the variable we need
+  distinct(sender) %>% #keep only once each email address 
+  count() #count them
+
+```
+
+```{r}
+#count the number of disctint recipient email address
+recipient_count <- df_message %>% select(rvalue) %>% distinct(rvalue) %>% count()
+
+```
+
+In the df_message table we observed that their exist `r recipient_count` email address for receiver and `r sender_count` for sender. The important difference between them suggesting several are exchange between employee and person outside the company. 
+
+```{r}
+#Display the top 10 email address of sender
+p1 <- df_message %>% group_by(sender)%>% count() %>% #to count the number of email send per email address
+  arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
+  #bar chart
+  ggplot(aes(reorder(sender, n, sum), n, fill = sender)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  #graph title and label
+  labs(title = "Top 10 Enron's employee email sender")+
+  xlab("Employee's email addres")+
+  ylab("Number of email send") +
+  scale_fill_brewer(palette = "Set3")+
+    theme(legend.position = "none",
+        plot.margin = margin(10, 10, 10, 20))
+
+#Display the top 10 email address of recipient
+p2 <- df_message %>% filter(rtype == "TO") %>% #select only the email of the direct concerned receiver
+  group_by(rvalue)%>% count() %>% #to count the number of email send per email address
+  arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
+  #bar chart
+  ggplot(aes(reorder(rvalue, n, sum), n, fill = rvalue)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  #graph title and label
+  labs(title = "Top 10 Enron's employee email receiver",
+       subtitle = "Only principal receiver")+
+  xlab("Employee's email address")+
+  ylab("Number of email recipient") +
+  scale_fill_brewer(palette = "Set3")+
+  theme(legend.position = "none",
+        plot.margin = margin(10, 10, 10, 20))
+
+#arrange the plot on the same place
+ggarrange(p1, p2, 
+          nrow=2 ) 
+
+```
+The above plot shown us that, the top email sender is Jeff Dasovich and the top direct receiver is no.address which could be a general email address to send the same email at a list of person associate to it. In the recipient, Jeff Dasovich is also the person who received the highest number of email. In the employeelist dataset we can see that, he has an employee status. 
+```{r}
+employeelist_2[employeelist_2$Email_id == "jeff.dasovich@enron.com", ]
+```
+To simplify the association between the employee status and their email we merged the email_id variable in the employeelist_2 table with the sender variable in the df_message. Before to do it we change the name of that variable for sender_employee_status to associate the status at a sender.
+
+**SEE HOW TO CREATE A FUNCTION FOR MAKES A MERGING WITH THE 2 EMAIL ADDRESS VARIABLE** do it for the sender and the recipient. 
+
+```{r}
+employeelist_2_sender_merged <- employeelist_2 %>% select(Email_id, status) %>%
+  rename(sender = Email_id, sender_status = status) 
 
 
+df_message_status <- left_join(df_message, employeelist_2_sender_merged, #the table we merged 
+                        by = "sender") #the variable used for merging
+
+df_message_status %>% filter(!is.na(sender_status))
+
+```
+In doing this we are able to link 294 291 email sent to the employee status.
+
+
+We do the same for the recipient by renaming the status variable in the employeelist_2 to recipient_employee_status.
+```{r}
+
+```
 
 
 
@@ -380,6 +472,11 @@ The above bar chart shows us that:
   - look at the number of email per email address
   - look at the type of email (TO, CC, BC)
   - look at the number of eamil exchange between month and year -> see if it as significant change around the historic date
+
+=> for the referenceinfo make an analysis of the message content or do it with the subject from recipientinfo table where is more exhaustive. 
+With the subject makes a classification of the potential different type of email send/receive. 
+
+=> make a radar chart to display the status and the number of email send/recieve by each. To do it follow this tutorial: https://r-graph-gallery.com/web-circular-barplot-with-R-and-ggplot2.html
 
 => pursue with the analytics question in the Exam project rules.   
 
