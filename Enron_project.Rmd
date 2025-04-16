@@ -148,6 +148,48 @@ message%>% select(mid, message_id) %>% #select only the variable we need.
 ```
 This shown that, each message_id is attached to one and only one mid and confirm to us the redundancy of the 2 variables in the data frame. To lighten the data we can choose one of them to be kept in the dataframe for the analysis. 
 
+As we saw in the table header me have email address of the email's sender in the sender variable. Those email address are also in the employeelist where it as for most of the employee their status in the company but there are split into 4 different variable. In addition, the variable Email3 and EMail4 contain a lot of blank value. To see how we will can merge the two table we look at the correspondance between the 2 tables for the email address.
+
+```{r}
+#prepared table to only check which email address in the Email_ID are also in the sender
+employee_merge1 <- employeelist %>% mutate(sender = Email_id) %>% select(sender)
+employee_merge2 <- employeelist %>% mutate(sender = Email2) %>% select(sender)
+employee_merge3 <- employeelist %>% mutate(sender = Email3) %>% select(sender)
+employee_merge4 <- employeelist %>% mutate(sender = EMail4) %>% select(sender)
+
+#to do the join only with the sender variable
+message_merge <- message %>% select(sender)
+```
+
+```{r}
+#first between the sender in the message table and the Email_id in the employeelist
+EmailID_sender1 <- inner_join(message_merge, employee_merge1, by = "sender")
+
+EmailID_sender1 %>% count()
+```
+
+```{r}
+#between the sender in the message table and the Email2 in the employeelist
+EmailID_sender2 <- inner_join(message_merge, employee_merge2, by = "sender")
+
+EmailID_sender2 %>% count()
+```
+
+```{r}
+#between the sender in the message table and the Email3 in the employeelist
+EmailID_sender3 <- inner_join(message_merge, employee_merge3, by = "sender")
+
+EmailID_sender3 %>% count()
+```
+
+```{r}
+#between the sender in the message table and the EMail4 in the employeelist
+EmailID_sender4 <- inner_join(message_merge, employee_merge4, by = "sender")
+
+EmailID_sender4 %>% count()
+```
+By using the inner_join we can see that, in the employeelist table only the variable Email_id and Email3 have email address which are also in the sender variable of the message table. If we want to get the status of the employee status attached to the sender email address we need to do the merge with those variable. 
+
 
 ### recipient info data set
 
@@ -164,7 +206,48 @@ Display of some observations in the data frame:
 ```{r echo=FALSE}
 kable(recipientinfo[1:10, ])
 ```
-By looking at the head of this dataset we can see that rid and mid are identifier, with the result return by the summary function we need to transform those variables into factor data for having in the good type. Also, the mid variable is a foreign key allowed to link this table with the message table. Binding together this 2 table will allow us to have the sender and the receiver of the email as well as which type of receiver (direct with the to or "indirect" with the CC and BCC). The last variable rvalue is the email address of the receiver which can be general (*e.g.,* all.worldwide@enron.com, see in the head of the table) or specific to a person (*e.g.,* jeff.dasovich@enron.com, see as the top specific receiver in the summary of that table). 
+By looking at the head of this dataset we can see that rid and mid are identifier, with the result return by the summary function we need to transform those variables into factor data for having in the good type. Also, the mid variable is a foreign key allowed to link this table with the message table. Binding together this 2 table will allow us to have the sender and the receiver of the email as well as which type of receiver (direct with the to or "indirect" with the CC and BCC). The last variable rvalue is the email address of the receiver which can be general (*e.g.,* all.worldwide@enron.com, see in the head of the table) or specific to a person (*e.g.,* jeff.dasovich@enron.com, see as the top specific receiver in the summary of that table). The specific email address in the rsender variable can be find in the email addresses in the employeelist variable related to the email address of each employee to get their status in the company. We proceed as with the message table. 
+
+```{r}
+#prepared table to only check which email address in the Email_ID are also in the sender
+employee_merge1 <- employeelist %>% mutate(rvalue = Email_id) %>% select(rvalue)
+employee_merge2 <- employeelist %>% mutate(rvalue = Email2) %>% select(rvalue)
+employee_merge3 <- employeelist %>% mutate(rvalue = Email3) %>% select(rvalue)
+employee_merge4 <- employeelist %>% mutate(rvalue = EMail4) %>% select(rvalue)
+
+#to do the join only with the sender variable
+recipient_merge <- recipientinfo %>% select(rvalue)
+```
+
+```{r}
+#first between the rvalue in the recipient table and the Email_id in the employeelist
+EmailID_recipient1 <- inner_join(recipient_merge, employee_merge1, by = "rvalue")
+
+EmailID_recipient1 %>% count()
+```
+
+```{r}
+# between the rvalue in the recipient table and the Email2 in the employeelist
+EmailID_recipient2 <- inner_join(recipient_merge, employee_merge2, by = "rvalue")
+
+EmailID_recipient2 %>% count()
+```
+
+```{r}
+#between the rvalue in the recipient table and the Email3 in the employeelist
+EmailID_recipient3 <- inner_join(recipient_merge, employee_merge3, by = "rvalue")
+
+EmailID_recipient3 %>% count()
+```
+
+```{r}
+#first between the rvalue in the recipient table and the EMail4 in the employeelist
+EmailID_recipient4 <- inner_join(recipient_merge, employee_merge4, by = "rvalue")
+
+EmailID_recipient4 %>% count()
+```
+
+Like in the message table, we only have match between the rvalue and the Email_id and Email3 variable.
 
 ### reference info data set
 
@@ -186,9 +269,7 @@ By looking at the head of that table we can see that:
 
 - the rfid and mid aren't numeric variable but look like identifier. It will be necessary to change their data type for factor for it be better adapted.
 
-- the reference variable describe the content of each message.
-
-- the existence here of the mid variable allow us to merge that table with the message and/or the recipientinfo table.
+- the reference in the referenceinfo table is a variable describing the content of each message. It has also the mid variable which allow us to merge that table with the message and/or the recipientinfo table.
 
 - in the message and recipientinfo table we have email address like in the employeelist info. We could thinks that, this table can be merged through this.
 
@@ -203,20 +284,20 @@ We choose to :
 
 - withdraw the message_id variable in the message table to lighten the dataset. In addition we drop the lines for which the date aren't in the study's period (from 1999 to 2002) and the strange date.
 
-- for the moment, withdraw the variable Email3 and EMail4 variable in the employeelist table because they contain al lot of blank value and every employee have one Email id filled. We choose to keep for the moment the Email2 variable because it contain only 52 blank observation over the 149 which makes average 25% of the data. 
+- for the moment, withdraw the variable Email2 and EMail4 variable in the employeelist table because they doesn't match with the email address in the message and recipientinfo table. 
 
-- don't keep the referenceinfo table because it contain only 54,778 observation which makes only 2% of the recipientinfo table. This suggest that, this table isn't exhuastive and adding those info in a merging table with recipientinfo will create a lot of missing values. 
+- Even the referenceinfo table isn't exhaustive because it contain only 54,778 observation which makes only 2% of the recipientinfo table. We will can analyse a few part of the email exchange.
 
-- Creates a table which bind all the information about the message by merging together the table message and recipientinfo through the mid foreign key.
+- Creates a table which bind all the information about the message by merging together the table message, referenceinfo and recipientinfo through the mid foreign key. 
 
 ### Data engineering and cleaning
 
 #### Employeelist table
 ```{r}
 employeelist_2 <- employeelist %>% 
-  select(-c(Email3, EMail4)) %>% #the variable we don't need in the data
+  select(-c(Email2, EMail4)) %>% #the variable we don't need in the data
   transform(eid = as.factor(eid)) %>% #data type change for the variable eid to factor
-  mutate(status = if_else((status == "N/A"), NA, status)) #homogenezed the declaration of the NA in the variable status
+  mutate(status = if_else((status == "N/A"), NA, status)) #homogenized the declaration of the NA in the variable status
 
 ```
 
@@ -241,6 +322,7 @@ message_2 <- message %>%
   select(-c(message_id)) %>% #withdraw the variable we don't need
   transform(#change the data type for factor
     mid = as.factor(mid),
+    sender = as.factor(sender),
     subject = as.factor(subject)) %>%
   #add the year variable in the table from the date
   mutate(year = as.factor(format(date, "%Y"))) %>% 
@@ -256,6 +338,7 @@ message_2 <- message %>%
 recipientinfo_2 <- recipientinfo %>%
   #change the variable data type for factor
   transform(rid = as.factor(rid),
+            rvalue = as.factor(rvalue),
     mid = as.factor(mid))
 ```
 
@@ -275,6 +358,10 @@ referenceinfo_2 <- referenceinfo %>%
 #first between the recipientinfo_2 and message_2
 df_message <- left_join(recipientinfo_2, message_2, #the table we merged 
                         by = "mid") #the variable used for merging
+
+#then between the new table df_message and the referenceinfo_2
+df_message <- left_join(df_message, referenceinfo_2,
+                        by = "mid")
 ```
 
 Verification of the merging operation by comparing the number of observation in the recipientinfo_2 table and the df_message table. We compared their number of observation (or rows) to be sure we don't get any rows duplication.
@@ -289,12 +376,13 @@ Verification of the data type change and display of the new dimension for the 2 
 #display the datatype of each variable in each new dataframe
 print("Data type and dimension of the new employeelist table")
 str(employeelist_2)
+print(" ")
 print("Data type and dimension of the new df_message table")
 str(df_message)
 ```
 Description and head dsiplay of the new table df_message:
 ```{r}
-summary(df_message)
+kable(summary(df_message))
 ```
 ```{r}
 kable(df_message[1:20, ])
@@ -326,9 +414,127 @@ summary(df_message)
 ```
 Now we don't have any missing values and the table is ready to be use for further analysis related to the Enron company history. 
 
+#### Merging the employee status with the df_message table
+
+In first we do it for the sender with Email_id 
+```{r}
+#prepared the employeelist table for the merge
+employee_merge_final <- employeelist_2 %>% 
+  select(Email_id, status) %>% #keep only the variables we need
+  mutate(status_sender = status) %>% #rename the status variable to know to who is attached the status
+  select(-status)
+
+#merged with the df_message table 
+df_message_status <- left_join(df_message, employee_merge_final, 
+                               join_by(sender == Email_id))
+
+#verification the merged work
+df_message_status %>% filter(!is.na(status_sender)) %>% count()
+```
+
+Then we do it for the sender with Email3 
+```{r}
+#prepared the employeelist table for the merge
+employee_merge_final2 <- employeelist_2 %>% 
+  select(Email3, status) %>% #keep only the variables we need
+  mutate(status_sender_email3 = status) %>% #rename the status variable to know to who is attached the status
+  select(-status)
+
+#merged with the df_message table 
+df_message_status <- left_join(df_message_status, employee_merge_final2, 
+                               join_by(sender == Email3))
+
+#verification the merged work
+df_message_status %>% filter(!is.na(status_sender_email3)) %>% count()
+```
+
+group all the sender status in to one variable
+```{r}
+df_message_status <- df_message_status %>% mutate(
+  #replace the NA value in the variable by the value in the 2nd variable
+  status_sender = if_else((is.na(status_sender) == TRUE), status_sender_email3, status_sender)) %>% select(-status_sender_email3) #drop the variable
+
+#verification the merged work
+df_message_status %>% filter(!is.na(status_sender)) %>% count()
+```
+
+With this operation we attached 296 325 sender's email address to their employee status.Next we the same for the recipient.
+
+In first we do it for the recipient with Email_id 
+```{r}
+#prepared the employeelist table for the merge
+employee_merge_final_recipient <- employeelist_2 %>% 
+  select(Email_id, status) %>% #keep only the variables we need
+  mutate(status_recipient = status) %>% #rename the status variable to know to who is attached the status
+  select(-status)
+
+#merged with the df_message table 
+df_message_status <- left_join(df_message_status, employee_merge_final_recipient, 
+                               join_by(rvalue == Email_id))
+
+#verification the merged work
+df_message_status %>% filter(!is.na(status_recipient)) %>% count()
+```
+
+Then we do it for the recipient with Email3 
+```{r}
+#prepared the employeelist table for the merge
+employee_merge_final_recipient2 <- employeelist_2 %>% 
+  select(Email3, status) %>% #keep only the variables we need
+  mutate(status_recipient_email3 = status) %>% #rename the status variable to know to who is attached the status
+  select(-status)
+
+#merged with the df_message table 
+df_message_status <- left_join(df_message_status, employee_merge_final_recipient2, 
+                               join_by(rvalue == Email3))
+
+#verification the merged work
+df_message_status %>% filter(!is.na(status_recipient_email3)) %>% count()
+```
+
+group all the recipient status in to one variable
+```{r}
+df_message_status <- df_message_status %>% mutate(
+  #replace the NA value in the variable by the value in the 2nd variable
+  status_recipient = if_else((is.na(status_recipient) == TRUE), status_recipient_email3, status_recipient)) %>% 
+  select(-status_recipient_email3) #drop the variable
+
+#verification the merged work
+df_message_status %>% filter(!is.na(status_recipient)) %>% count()
+```
+
+By doing this we identify the status of 294 119 employee receiving the email.
+
+Now all the information we need are group in the same data frame, we look at the period which is cover by email content in the reference variable 
+```{r}
+start <- df_message %>% filter(!is.na(reference)) %>% select(date) %>%
+  arrange(date) %>% head(n=1)
+
+
+end <- df_message %>% filter(!is.na(reference)) %>% select(date) %>%
+  arrange(desc(date)) %>% head(n=1)
+
+length_email_content <- df_message %>% filter(!is.na(reference)) %>% count()
+
+```
+
+We have `r length_email_content` with the 1st message is the `r start` and the last the `r end`. We will can analyse the content a part of message exchange between the Enron employee over this period. 
+
+To facilitate the analysis and lightening the data frame we withdraw the identifier columns which aren't more useful for us and change the name of the rvalue variable for recipient to be more meaning full.
+```{r}
+df_message_status <- df_message_status %>% 
+  #withdraw the variable which are identifier
+  select(-c(mid, rfid, rid)) %>%
+  #change the name of the recipient email variable
+  mutate(recipient = rvalue) %>%
+  #order the different variable
+  select(date, sender, status_sender, rtype, recipient, status_recipient, subject, reference)
+```
+
+
 ```{r echo=FALSE}
 #cleaning of the object no more necessary in the environment
-rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo)
+rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo, referenceinfo_2, df_message_missing, message_merge, recipient_merge, EmailID_sender1, EmailID_sender2, EmailID_sender3, EmailID_sender4, EmailID_recipient1, EmailID_recipient2, EmailID_recipient3, EmailID_recipient4, employee_merge1, employee_merge2, employee_merge3, employee_merge4, end, start, length_email_content, employee_merge_final, employee_merge_final2, employee_merge_final_recipient, employee_merge_final_recipient2)
 ```
 
 ### Data analysis
@@ -339,6 +545,8 @@ theme_set(theme_light())
 
 
 #### the employee liste 
+
+To explore the number different type of employee we have in the company, we used the employeelist2 data frame. 
 
 Number of employee per status :
 ```{r}
@@ -363,6 +571,7 @@ employeelist_2 %>% select(status) %>% #select the needed variable
                     na.value = "grey50")+
   theme(legend.position = "none")
 ```
+
 The above bar chart shows us that:
 
 - most of the employee have an employee or unknown status (respectively 27.48% and 21.48%)
@@ -376,12 +585,10 @@ The above bar chart shows us that:
 - at the head of the company it has several CEO, President, and managing director (average 2% for each)
 
 
-### Exploring the email address to see if is it possible to link the table employeelist and df_message through it.
-
 First of all in the df_message we count the distinct email address for the sender and the recipient as well as often they appear in the table:
 ```{r}
 #count the number of disctint sender email address
-sender_count <- df_message %>% select(sender) %>% #keep only the variable we need
+sender_count <- df_message_status %>% select(sender) %>% #keep only the variable we need
   distinct(sender) %>% #keep only once each email address 
   count() #count them
 
@@ -389,7 +596,7 @@ sender_count <- df_message %>% select(sender) %>% #keep only the variable we nee
 
 ```{r}
 #count the number of disctint recipient email address
-recipient_count <- df_message %>% select(rvalue) %>% distinct(rvalue) %>% count()
+recipient_count <- df_message_status %>% select(recipient) %>% distinct(recipient) %>% count()
 
 ```
 
@@ -397,7 +604,7 @@ In the df_message table we observed that their exist `r recipient_count` email a
 
 ```{r}
 #Display the top 10 email address of sender
-p1 <- df_message %>% group_by(sender)%>% count() %>% #to count the number of email send per email address
+p1 <- df_message_status %>% group_by(sender)%>% count() %>% #to count the number of email send per email address
   arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
   #bar chart
   ggplot(aes(reorder(sender, n, sum), n, fill = sender)) +
@@ -412,11 +619,11 @@ p1 <- df_message %>% group_by(sender)%>% count() %>% #to count the number of ema
         plot.margin = margin(10, 10, 10, 20))
 
 #Display the top 10 email address of recipient
-p2 <- df_message %>% filter(rtype == "TO") %>% #select only the email of the direct concerned receiver
-  group_by(rvalue)%>% count() %>% #to count the number of email send per email address
+p2 <- df_message_status %>% filter(rtype == "TO") %>% #select only the email of the direct concerned receiver
+  group_by(recipient)%>% count() %>% #to count the number of email send per email address
   arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
   #bar chart
-  ggplot(aes(reorder(rvalue, n, sum), n, fill = rvalue)) +
+  ggplot(aes(reorder(recipient, n, sum), n, fill = recipient)) +
   geom_bar(stat="identity") +
   coord_flip() +
   #graph title and label
@@ -433,33 +640,222 @@ ggarrange(p1, p2,
           nrow=2 ) 
 
 ```
-The above plot shown us that, the top email sender is Jeff Dasovich and the top direct receiver is no.address which could be a general email address to send the same email at a list of person associate to it. In the recipient, Jeff Dasovich is also the person who received the highest number of email. In the employeelist dataset we can see that, he has an employee status. 
+
+The above plot shown us that, the top email sender is Jeff Dasovich and the top direct receiver is no.address which could be a general email address to send the same email at a list of person associate to it. In the recipient, Jeff Dasovich is also the person who received the highest number of email. 
+This person is identify as an employee like is described in the df_message_status data frame.
 ```{r}
-employeelist_2[employeelist_2$Email_id == "jeff.dasovich@enron.com", ]
+#return only one result from that query to get the status of the most active sender/recipient
+head(df_message_status[df_message_status$sender == "jeff.dasovich@enron.com", "status_sender"], 
+     n=1)
 ```
-To simplify the association between the employee status and their email we merged the email_id variable in the employeelist_2 table with the sender variable in the df_message. Before to do it we change the name of that variable for sender_employee_status to associate the status at a sender.
-
-**SEE HOW TO CREATE A FUNCTION FOR MAKES A MERGING WITH THE 2 EMAIL ADDRESS VARIABLE** do it for the sender and the recipient. 
-
+*DO A BETTER PLOT !! one where we can display on the plot the mean*
 ```{r}
-employeelist_2_sender_merged <- employeelist_2 %>% select(Email_id, status) %>%
-  rename(sender = Email_id, sender_status = status) 
-
-
-df_message_status <- left_join(df_message, employeelist_2_sender_merged, #the table we merged 
-                        by = "sender") #the variable used for merging
-
-df_message_status %>% filter(!is.na(sender_status))
-
-```
-In doing this we are able to link 294 291 email sent to the employee status.
-
-
-We do the same for the recipient by renaming the status variable in the employeelist_2 to recipient_employee_status.
-```{r}
+#statistics on the jeff dasovich email send
+df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>% group_by(date) %>% count() %>% ungroup() %>% ggplot()+
+  geom_boxplot(aes(y=n), fill = "darkgreen")
 
 ```
 
+This person send average 167 email per day but the boxplot highlight the existence of a lot of outliers (between 500 and 1683) which are very far of the 3rd quartil, average 200 email sent. The median is lowest, around 70 email sent per days. 
+
+```{r}
+#the number of different topic he send per day
+df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>% group_by(date) %>% distinct(subject) %>% count() %>% ungroup() %>% summary()
+```
+If we look at the different topic of the email send by this person we can see that, in average it send 10 different email topics per day with a max of 34 and a min at 1. By looking at the quartile, most of the time it send between 3 to 17 different topic. 
+
+
+```{r}
+df_message_status %>% group_by(date, sender) %>% count() %>% ungroup()%>% summary()
+```
+In average, each employee of Enron company send 19 email per day. Perhaps it seems to exist a lot of outliers because the mean is highest than the 3rd quartile and the max is at more than 18,000 email per day. To understant to what is attached the max we look at the result by arraging them in decreasing order for the count.
+
+```{r}
+head(df_message_status %>% group_by(date, sender) %>% count() %>% ungroup()%>% arrange(desc(n)), n=1)
+```
+The person who sent more than 18,000 in one day was david forster the April 2nd in 2002 which is related to... *complete this part with some research on the enron event*
+
+
+
+
+
+=>!! pursue here by developping the investigation on the email send (stat desctiptive + boxplot comparing the most active employee, per status, and the employee in general) 
+do the same for the email recieves.
+=> make an analysis per month the number of email send/receive by employee, one per month over the 3 years, try to find a way to do a dynamic plot with all in one for the shiny apps. 
+
+
+
+
+
+
+
+
+First we focus on the email address for sender and recipient with a enron domain for the email address. 
+```{r}
+#We used regexp to research the enron domain in the email address, the $ sign all us to obtain the string whose match with the pattern
+Enron_email <- df_message_status %>% 
+  filter(str_detect(rvalue,"@enron.com$"))%>%  filter(str_detect(sender,"@enron.com$")) %>% 
+  transform(sender = as.factor(sender),
+    rvalue = as.factor(rvalue))
+
+#To get only the number of rows in the new data set
+dim(Enron_email)[1]
+```
+
+We have 1,701,271 rows describing email exchange between Enron's employee representing 82% of the total email exchange. 
+
+```{r}
+Enron_email %>% filter((!is.na(sender_status)) | (!is.na(recipient_status))) %>% count()
+```
+Among them, 28% have a label for the employee status. For the other the status isn't know.
+
+```{r}
+#return the number of email send in function of his status
+Enron_email %>% filter((!is.na(sender_status)) & (!is.na(recipient_status))) %>%
+  group_by(sender_status) %>% count() %>% arrange(desc(n)) %>%
+  #bar plot
+  ggplot(aes(reorder(sender_status, n, sum), n, fill = sender_status)) +
+  geom_bar(stat = "identity") +
+  coord_flip()+
+  xlab("Employee status") +
+  ylab("Number of email send")+
+  labs(title = "Number of email send in function of their employee status",
+       subtitle = "Without employee with unknow status") +
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+  
+```
+
+In the above plot we can see that, most of the time the email are send by employee then we have the vice president and the manager. The lawyer of the company are those who sent the less number of email to other company member.
+
+```{r}
+#look at the same but in keeping the email address without employee status 
+Enron_email %>% filter((!is.na(sender_status)) | (!is.na(recipient_status))) %>%
+  group_by(sender_status) %>% count() %>% arrange(desc(n)) %>%
+  #bar plot
+  ggplot(aes(reorder(sender_status, n, sum), n, fill = sender_status)) +
+  geom_bar(stat = "identity") +
+  coord_flip()+
+  xlab("Employee status") +
+  ylab("Number of email send")+
+  labs(title = "Number of email send in function of their employee status",
+       subtitle = "Including employee with unknow status") +
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+```
+
+We can see that most of email are send by people who work in the company but their status isn't know. After we find those who are employee, vice president, and manager.  
+
+
+```{r}
+#return the number of email receive in function of his status
+Enron_email %>% filter((!is.na(sender_status)) & (!is.na(recipient_status))) %>%
+  group_by(recipient_status) %>% count() %>% arrange(desc(n)) %>%
+  #bar plot
+  ggplot(aes(reorder(recipient_status, n, sum), n, fill = recipient_status)) +
+  geom_bar(stat = "identity") +
+  coord_flip()+
+  xlab("Employee status") +
+  ylab("Number of email receives")+
+  labs(title = "Number of email receive in function of their employee status",
+       subtitle = "Without employee with unknow status") +
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+  
+```
+
+This plot highlight that, it's the vice president who receive the highest number of email, than we have the employee and the manager.
+
+```{r}
+#return the number of email receive in function of his status
+Enron_email %>% filter((!is.na(sender_status)) | (!is.na(recipient_status))) %>%
+  group_by(recipient_status) %>% count() %>% arrange(desc(n)) %>%
+  #bar plot
+  ggplot(aes(reorder(recipient_status, n, sum), n, fill = recipient_status)) +
+  geom_bar(stat = "identity") +
+  coord_flip()+
+  xlab("Employee status") +
+  ylab("Number of email receives")+
+  labs(title = "Number of email receive in function of their employee status",
+       subtitle = "Including employee with unknow status") +
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+  
+```
+
+Surprisingly in the above plot when we take in account the person who work in the company but their status isn't know the person with an employee status receive more email than the vice president. This suggest that, the employee could receive more email from employee who the status in unknow compared to the vice president. 
+The same between trader, director, and president when we take in account the unknow employee the trader receive more email than director and president.
+
+
+**Enhance the visual!! with label and percentage inside the pie**
+```{r}
+Enron_email %>% group_by(rtype) %>% count() %>%
+  ggplot(aes("", n, fill = rtype)) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y") 
+```
+
+The pie chart highlight this, most of the time the exchange are direct between employee but average 1/4 are with people in CC or BCC which mean some email are duplicated to specify who is in CC or BCC of it. We start by looking at the status 
+
+```{r}
+#return the email address received in copy with a know recipient status
+p3 <- Enron_email %>% filter((rtype %in% c("BCC", "CC"))& (!is.na(recipient_status))) %>%
+        group_by(recipient_status) %>% count() %>% arrange(desc(n)) %>%
+  #bar plot chart
+  ggplot(aes(reorder(recipient_status,n,sum), n, fill = recipient_status)) +
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  xlab("Employee status") +
+  ylab("Number of email receives")+
+  labs(title = "Number of email receive in copy in function of their employee status",
+       subtitle = "Without employee with unknow status for the email recipient") +
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+
+#return the email receive address to the person (TO rtype)
+p4 <- Enron_email %>% filter((rtype == "TO")& (!is.na(recipient_status))) %>%
+        group_by(recipient_status) %>% count() %>% arrange(desc(n)) %>%
+  #bar plot chart
+  ggplot(aes(reorder(recipient_status,n,sum), n, fill = recipient_status)) +
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  xlab("Employee status") +
+  ylab("Number of email receives")+
+  labs(title = "Number of email receive directly in function of their employee status",
+       subtitle = "Without employee with unknow status for the email recipient") +
+  scale_fill_brewer(palette = "Set3", 
+                    #to display the NA in grey on the graph
+                    na.value = "grey50")+
+  theme(legend.position = "none")
+
+#arrange the plot on the same place
+ggarrange(p3, p4, 
+          nrow=2 ) 
+
+```
+
+By comparing this 2 graph we can see that the trader, managing director receives more email in copy than directly. Inversely the director and president receive more email directly address to them. 
+
+**With this analysis we can deduce that, we have a lot of person working in Enron without defining employee status. It is those person who sent and receive the highest number of email. If we focus on those with a knowing employee status we observed that, it is the vice president who received the highest number of email and it is the employee who sent the most.**
+
+
+```{r}
+df_message %>% select(sender) %>% filter(str_detect(sender, "@enron.com$")) %>% distinct(sender)
+```
+
+
+
+=> look at the email address which aren't link with knowing employee status and try to give one to them such as if that look like a general address put the label group, if it is a personal email label it employee.
 
 
 # !!!List of thing need to be achieved !!!
