@@ -729,10 +729,49 @@ By plotting the number of email in function of their group we can see that:
 
 - Jeff is significantly most active in average compared to all Enron's worker.
 
-*Do the same to compared the different statuts in term of number email sending*
+Then we look if in the Enron's worker statuts it has one which is more active than the other. 
+```{r}
+#compute the number of email send per day per employee statuts
+violin_worker <- df_message_status %>%   filter(!is.na(status_sender)) %>%
+  group_by(date, status_sender) %>%
+  summarise(email_count = n(), .groups = "drop")
+
+violin_worker %>% distinct(status_sender)
+
+#comparison group
+group_comparison <- list(
+  c("Employee", "Vice President"),
+  c("Employee", "Managing Director"),
+  c("Employee", "President"),
+  c("Employee", "Manager"),
+  c("Employee", "Trader"),
+  c("Employee", "Director"),
+  c("Employee", "CEO"),
+  c("Employee", "In House Lawyer")
+)
+
+#violin plot 
+ggplot(violin_worker, aes(as.factor(status_sender), email_count, fill = as.factor(status_sender))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  ylim(c(0,20000))+
+  stat_compare_means(comparisons = group_comparison, method = "t.test", label.y =  c(5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000),
+                     size = 4, angle = 45)+
+  scale_y_break(c(1000, 4000), scales = 0.3)+
+  labs(title = "Comparison of the email count between 
+       Jeff Dasovitch and the Enron's worker",
+       x = "Source",
+       y = "Email count per day") +
+  theme(legend.position = "none")
+
+```
+
+
+*Do the same to compared the different statuts in term of number email sending -> find a way to better arrange the stat display on the plot*
 *repeat all the process for the recipient*
-*next analyse the email content -> cf read it email*
 *=> make an analysis per month the number of email send/receive by Enron's worker to find if it has a change over the year and/or in function of the enron events, one per month over the 3 years, try to find a way to do a dynamic plot with all in one for the shiny apps.* 
+*next analyse the email content -> cf read it email*
+
 
 This person send average 167 email per day but the boxplot highlight the existence of a lot of outliers (between 500 and 1683) which are very far of the 3rd quartil, average 200 email sent. The median is lowest, around 70 email sent per days. 
 
