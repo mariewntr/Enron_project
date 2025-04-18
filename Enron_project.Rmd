@@ -39,6 +39,8 @@ For data exploration, analysis and visualization:
 
 * [ggpubr](https://rpkgs.datanovia.com/ggpubr/)
 
+* [patchwork](https://patchwork.data-imaginist.com/index.html)
+
 To display the result into the Rmarkdown report:
 
 * [knitr](https://cran.r-project.org/web/packages/knitr/index.html)
@@ -50,10 +52,11 @@ To create the shiny apps:
 
 # Data exploring and cleaning
 
-```{r include=FALSE}
+```{r}
 #library
 library(tidyverse)
 library(ggpubr)
+library(patchwork)
 library(knitr)
 library(shiny)
 
@@ -72,7 +75,7 @@ The aim of this part is to see :
 ### employee dataset
 
 Description of the data set variables and dimension:
-```{r echo=FALSE}
+```{r}
 dim_employee <- dim(employeelist)
 
 summary(employeelist)
@@ -83,7 +86,7 @@ This data set contains employee ID (eid), the first and last name of the employe
 The eid variable is identify has type numeric, status is associate with a factor type and the other variable are character type. 
 
 Display of some observations in the data frame:
-```{r echo=FALSE}
+```{r}
 kable(employeelist[1:10, ])
 ```
 
@@ -91,11 +94,11 @@ By looking at the head of the data, we observed that eid is associate to numeric
 
 To investigate the blank we temporary change the datatype of those variables from character to factor to see what kind of result we return for the blank observation. 
 ```{r}
-employeelist %>% transform(
+kable(employeelist %>% transform(
   Email2 = as.factor(Email2),
   Email3 = as.factor(Email3),
   EMail4 = as.factor(EMail4)
-) %>% summary()
+) %>% summary())
 ```
 We can see that, in the Email2, Email3, and EMail4 variable don't have missing value but they are blank character. In the Email3 and EMail4 more than the half of the value are blank, maybe those variable aren't very helpful for the analysis. In the variable status the NA are differently declared where we have 31 values with N/A and only 1 NA. For that variable we will need to replace the N/A by real NA values to homogenized the data. 
 
@@ -103,17 +106,17 @@ We can see that, in the Email2, Email3, and EMail4 variable don't have missing v
 ### message data set
 
 Description of the data set variables and dimension:
-```{r echo=FALSE}
+```{r}
 dim_message <- dim(message)
 
-summary(message)
+kable(summary(message))
 ```
 This data set contain `r dim_message[1]` rows and `r dim_message[2]` columns. 
 
 Here we observed that, the mid and date variables identify as a numeric, the variables sender and message_id are attached to factor data type, and the variable subject is character data type. 
 
 Display of some observations in the data frame:
-```{r echo=FALSE}
+```{r}
 kable(message[1:10, ])
 ```
 By looking at the head  of the data we observed that, the mid don't look like numeric data but more has identifier like the eid variable in the employeelist table. In the data frame the date variable is associate to a date type. More over it seems that the observation in the subject variable are repeat several time suggesting they aren't individual string but more a categorical variable.
@@ -128,11 +131,11 @@ In the date variable the min and max values return are strange date. In the intr
 
 To understand what is those values we filter the table to get the year is less than 1999 or more than 2002:
 ```{r}
-message %>% 
+kable(message %>% 
   select(date) %>% #keep the date variable
   mutate(year = format(date,"%Y")) %>% #extract the year from the date
   filter((year < 1999) | (year > 2002)) %>% #keep the value below and after the study's period
-  group_by(year) %>% count() #count the number of rows per date out of the study's period
+  group_by(year) %>% count()) #count the number of rows per date out of the study's period
 ```
 In filtering the strange date we can see that some aren't date (0001, 0002) and the other are out of the study's period. This represent average 450 values which makes less than 1% of the observations in the table.   
 
@@ -140,11 +143,11 @@ In filtering the strange date we can see that some aren't date (0001, 0002) and 
 The variable mid and message_id could be redundancy. To verify that we will count the number of distinct value for both variable to see if a mid could be attached to several message_id. 
 
 ```{r}
-message%>% select(mid, message_id) %>% #select only the variable we need.
+kable(message%>% select(mid, message_id) %>% #select only the variable we need.
   transform(mid = as.factor(mid)) %>% #transform the mid into factor data type.
   group_by(message_id) %>% 
   count(mid) %>% #count the number of mid per message_id group, create a n variable with the result.
-  filter(n != 1) #filter to get the rows with a value different than 1.
+  filter(n != 1)) #filter to get the rows with a value different than 1.
 ```
 This shown that, each message_id is attached to one and only one mid and confirm to us the redundancy of the 2 variables in the data frame. To lighten the data we can choose one of them to be kept in the dataframe for the analysis. 
 
@@ -194,7 +197,7 @@ By using the inner_join we can see that, in the employeelist table only the vari
 ### recipient info data set
 
 Description of the data set variables and dimension:
-```{r echo=FALSE}
+```{r}
 dim_recipient <- dim(recipientinfo)
 
 summary(recipientinfo)
@@ -252,7 +255,7 @@ Like in the message table, we only have match between the rvalue and the Email_i
 ### reference info data set
 
 Description of the data set variables and dimension:
-```{r echo=FALSE}
+```{r}
 dim_reference <- dim(referenceinfo)
 
 summary(referenceinfo)
@@ -262,7 +265,7 @@ This data set contain `r dim_reference[1]` rows and `r dim_reference[2]` columns
 the summary pointed that, the variable rfid and mid are qualified as numeric type and the reference variable as a character type.
 
 Display of some observations in the data frame:
-```{r echo=FALSE}
+```{r}
 kable(referenceinfo[5:10, ])
 ```
 By looking at the head of that table we can see that:
@@ -532,7 +535,7 @@ df_message_status <- df_message_status %>%
 ```
 
 
-```{r echo=FALSE}
+```{r}
 #cleaning of the object no more necessary in the environment
 rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo, referenceinfo_2, df_message_missing, message_merge, recipient_merge, EmailID_sender1, EmailID_sender2, EmailID_sender3, EmailID_sender4, EmailID_recipient1, EmailID_recipient2, EmailID_recipient3, EmailID_recipient4, employee_merge1, employee_merge2, employee_merge3, employee_merge4, end, start, length_email_content, employee_merge_final, employee_merge_final2, employee_merge_final_recipient, employee_merge_final_recipient2)
 ```
@@ -546,7 +549,7 @@ theme_set(theme_light())
 
 #### the employee liste 
 
-To explore the number different type of employee we have in the company, we used the employeelist2 data frame. 
+To explore the number employee per different statuts we have, we used the employeelist2 data frame. 
 
 Number of employee per status :
 ```{r}
@@ -585,7 +588,7 @@ The above bar chart shows us that:
 - at the head of the company it has several CEO, President, and managing director (average 2% for each)
 
 
-First of all in the df_message we count the distinct email address for the sender and the recipient as well as often they appear in the table:
+First of all in the df_message we count the distinct email address for the sender and recipient as well as often they appear in the table:
 ```{r}
 #count the number of disctint sender email address
 sender_count <- df_message_status %>% select(sender) %>% #keep only the variable we need
@@ -648,13 +651,88 @@ This person is identify as an employee like is described in the df_message_statu
 head(df_message_status[df_message_status$sender == "jeff.dasovich@enron.com", "status_sender"], 
      n=1)
 ```
-*DO A BETTER PLOT !! one where we can display on the plot the mean*
+To see if Jeff is really the most active for sending email in the company we will compared the mean email send by him to the mean send by the employee with an employee statuts and the mean over all employee.
 ```{r}
-#statistics on the jeff dasovich email send
-df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>% group_by(date) %>% count() %>% ungroup() %>% ggplot()+
-  geom_boxplot(aes(y=n), fill = "darkgreen")
+#statistics on the jeff dasovich email send per day
+jeff_stat <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
+  group_by(date) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+
+#statistics on the email send per day by the enron's worker
+sender_stat <- df_message_status %>% group_by(date, sender) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Enron's worker") %>% select(-sender) %>% transform(source = as.factor(source))
+
+#statistics on the email send per day by the enron's worker who have an employee statuts
+statuts_stat <- df_message_status %>% filter(status_sender == "Employee") %>% group_by(date) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Employee status") %>% transform(source = as.factor(source))
+
+#combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
+violin_plot1 <- bind_rows(jeff_stat, statuts_stat)
+violin_plot2 <- bind_rows(jeff_stat, sender_stat)
+
+#compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee and/or worker in Enron's company
+p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  stat_compare_means(method = "t.test", label.y = max(violin_plot1$email_count) + 2)+
+  labs(title = "Comparison of the email count between 
+       Jeff Dasovitch and the Enron's Employee",
+       x = "Source",
+       y = "Email count per day") +
+  theme(legend.position = "none")
+
+p4 <- ggplot(violin_plot2, aes(as.factor(source), email_count, fill = as.factor(source))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  stat_compare_means(method = "t.test", label.y = max(violin_plot2$email_count) - 2000)+
+  scale_y_break(c(3000, 15000), scales = 0.3)+
+  labs(title = "Comparison of the email count between 
+       Jeff Dasovitch and the Enron's worker",
+       x = "Source",
+       y = "Email count per day") +
+  theme(legend.position = "none")
+
+#arrange the plot on the same place
+p3 + p4
 
 ```
+
+```{r}
+#display the stat of the different group
+violin_plot <- bind_rows(jeff_stat, sender_stat, statuts_stat)
+
+violin_plot %>% group_by(source)%>%
+  summarise(
+    mean = mean(email_count),
+    sd = sd(email_count),
+    min = min(email_count),
+    Q1 = quantile(email_count, 0.25),
+    Q3 = quantile(email_count, 0.75),
+    max = max(email_count)
+  )
+
+```
+The table who summarise the email send by group show us that:
+
+- It is Jeff Dasovitch who have the highest average for the number of email sent per day. The lowest is for all worker at enron company. The mean between Jeff and the employee group is close. 
+
+- By looking at the quantile, which represent respectively the 25% of the value and the 75% of the value, it is also Jeff who have the highest value for the quantile 1 and 3 especialy compared to the Enron's worker. 
+
+- Surprinsingly it is the Enron's worker who have the highest number of email send for a day. 
+
+By plotting the number of email in function of their group we can see that:
+
+- Jeff isn't most active compared to the other person in the employee group. 
+
+- Jeff is significantly most active in average compared to all Enron's worker.
+
+*Do the same to compared the different statuts in term of number email sending*
+*repeat all the process for the recipient*
+*next analyse the email content -> cf read it email*
+*=> make an analysis per month the number of email send/receive by Enron's worker to find if it has a change over the year and/or in function of the enron events, one per month over the 3 years, try to find a way to do a dynamic plot with all in one for the shiny apps.* 
 
 This person send average 167 email per day but the boxplot highlight the existence of a lot of outliers (between 500 and 1683) which are very far of the 3rd quartil, average 200 email sent. The median is lowest, around 70 email sent per days. 
 
@@ -681,7 +759,7 @@ The person who sent more than 18,000 in one day was david forster the April 2nd 
 
 =>!! pursue here by developping the investigation on the email send (stat desctiptive + boxplot comparing the most active employee, per status, and the employee in general) 
 do the same for the email recieves.
-=> make an analysis per month the number of email send/receive by employee, one per month over the 3 years, try to find a way to do a dynamic plot with all in one for the shiny apps. 
+
 
 
 
