@@ -41,7 +41,7 @@ For data exploration, analysis and visualization:
 
 * [patchwork](https://patchwork.data-imaginist.com/index.html)
 
-* [ggbreak]()
+* [ggbreak](https://cran.r-project.org/package=ggbreak)
 
 To display the result into the Rmarkdown report:
 
@@ -390,6 +390,7 @@ Description and head dsiplay of the new table df_message:
 ```{r}
 kable(summary(df_message))
 ```
+
 ```{r}
 kable(df_message[1:20, ])
 ```
@@ -759,9 +760,9 @@ ggplot(violin_worker, aes(as.factor(status_sender), email_count, fill = as.facto
 
 The above plot show us that, the employee are those who send the higher number of email in the company. The anova test show us the difference between the group is significant.
 
-Table with the descritive statistique for each group
+Table with the descriptive statistic for each group
 ```{r}
-#descriptive statistics between the worker statuts group
+#descriptive statistics between the worker status group
 violin_worker %>% group_by(status_sender)%>%
   summarise(
     mean = mean(email_count),
@@ -948,66 +949,28 @@ The above plot shown that:
 - The email exchange stop in July 2002. Maybe the date when the company was completely close. At the start of the 2002 (in January and February) we still see a high number of email exchange. Maybe this is due to the acheivement of the fiscal fraud investigation and it's consequences for the company. 
 
 Next, we look over the month of each year which are the worker status the most active. 
-In first for the year 1999.
+
+For the employee.
 ```{r}
-s1<-df_message_status %>% filter(!is.na(status_sender) & (year == 1999)) %>%
-  group_by(month, status_sender)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
+#list of status in the Enron company
+status_list <- c("Employee", "CEO", "Manager", "Director", "Vice President", "Trader", "President", "Managing Director", "In House Lawyer")
+
+#loop allowing to construct a bar plot to display per month the number of email send in function of the worker status
+for(status in status_list)
+{print(df_message_status %>% 
+         filter(status_sender == status) %>% #take the value in the list
+  group_by(year,month)%>%
+  count() %>% 
+    #bar plot
+    ggplot(aes(month, n, fill = month))+
   geom_bar(stat = "identity") +
-  facet_grid(~status_sender)+
-  labs(title = "Email send per month in 1999 in function of the Enron's worker status",
+  facet_grid(~year)+
+  labs(title = paste("Email send per month for each year by the", status),
        x = "Month",
        y = "Email count per month")+
   scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-For the year 2000.
-```{r}
-s2<-df_message_status %>% filter(!is.na(status_sender) & (year == 2000)) %>%
-  group_by(month, status_sender)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity") +
-  facet_grid(~status_sender)+
-  labs(title = "Email send per month in 2000 in function of the Enron's worker status",
-       x = "Month",
-       y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-For the year 2001.
-```{r}
-s3<-df_message_status %>% filter(!is.na(status_sender) & (year == 2001)) %>%
-  group_by(month, status_sender)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity") +
-  facet_grid(~status_sender)+
-  labs(title = "Email send per month in 2001 in function of the Enron's worker status",
-       x = "Month",
-       y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-For the year 2002.
-```{r}
-s4<-df_message_status %>% filter(!is.na(status_sender) & (year == 2002)) %>%
-  group_by(month, status_sender)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity") +
-  facet_grid(~status_sender)+
-  labs(title = "Email send per month in 2002 in function of the Enron's worker status",
-       x = "Month",
-       y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-```{r fig.width=35}
-#display all the plot
-
-(s1+s2)/(s3+s4)
-
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, vjust = 0.5)))}
 ```
 
 By looking year by year we can see that:
@@ -1020,68 +983,19 @@ By looking year by year we can see that:
 
 - The trader are the 3rd group who send a high number of email per month which is logic with the company activity. 
 
-Now we look for the email receive.
-In first for the year 1999.
+Now we look for the email receive in function of the Enron's worker status.
 ```{r}
-r1 <- df_message_status %>% filter(!is.na(status_recipient) & (year == 1999)) %>%
-  group_by(month, status_recipient)%>%
+for(status in status_list)
+{print(df_message_status %>% filter(status_sender == status) %>%
+  group_by(year,month)%>%
   count() %>% ggplot(aes(month, n, fill = month))+
   geom_bar(stat = "identity") +
-  facet_grid(~status_recipient)+
-  labs(title = "Email received per month in 1999 in function of the Enron's worker status",
+  facet_grid(~year)+
+  labs(title = paste("Email received per month for each year by the", status),
        x = "Month",
        y = "Email count per month")+
   scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-For the year 2000.
-```{r}
-r2 <- df_message_status %>% filter(!is.na(status_recipient) & (year == 2000)) %>%
-  group_by(month, status_recipient)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity") +
-  facet_grid(~status_recipient)+
-  labs(title = "Email received per month in 2000 in function of the Enron's worker status",
-       x = "Month",
-       y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-For the year 2001.
-```{r}
-r3 <- df_message_status %>% filter(!is.na(status_recipient) & (year == 2001)) %>%
-  group_by(month, status_recipient)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity") +
-  facet_grid(~status_recipient)+
-  labs(title = "Email received per month in 2001 in function of the Enron's worker status",
-       x = "Month",
-       y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-For the year 2002.
-```{r}
-r4 <- df_message_status %>% filter(!is.na(status_recipient) & (year == 2002)) %>%
-  group_by(month, status_recipient)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity") +
-  facet_grid(~status_recipient)+
-  labs(title = "Email received per month in 2002 in function of the Enron's worker status",
-       x = "Month",
-       y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
-```
-
-```{r fig.width=35}
-#display all the plot
-
-(r1+r2)/(r3+r4)
-
+  theme(legend.position = "none"))}
 ```
 
 The plot above shows that: *read the analyse again to be sure*
@@ -1093,7 +1007,6 @@ The plot above shows that: *read the analyse again to be sure*
 - For the group at the head of the company (CEO, Managing director, director, president and vice president) the number of email receive follow the Enron's fiscal fraud event with a high pick in 2001 for the months April, May, October, and November. 
 
 - For the year 2001, the vice president group receive a lot of email compared to the other head group of the company. 
-
 - It is for the year 2001 the group in house lawyer seems to receive the higher number of email. 
 
 **To summarize the observation on email exchange over the study period,**
@@ -1102,8 +1015,13 @@ The plot above shows that: *read the analyse again to be sure*
 
 ```{r}
 #envrionment cleaning
-rm(s1, s2, s3, s4, r1, r2, r3, r4, p3, p4, jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_plot2, violin_worker)
+rm(jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_plot2, violin_worker, status_list)
 ```
+
+
+
+
+
 
 
 *next analyse the email content -> cf read it email*
