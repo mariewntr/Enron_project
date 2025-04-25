@@ -37,11 +37,19 @@ For data exploration, analysis and visualization:
 
 * [tidyverse](https://www.tidyverse.org/packages/)
 
+* [circlize](https://cran.r-project.org/web/packages/circlize/index.html)
+
 * [ggpubr](https://rpkgs.datanovia.com/ggpubr/)
 
 * [patchwork](https://patchwork.data-imaginist.com/index.html)
 
 * [ggbreak](https://cran.r-project.org/package=ggbreak)
+
+* [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html)
+
+* [grid](https://bookdown.org/rdpeng/RProgDA/the-grid-package.html)
+
+*[gtable](https://cran.r-project.org/web/packages/gtable/index.html)
 
 To display the result into the Rmarkdown report:
 
@@ -52,13 +60,15 @@ To create the shiny apps:
 * [shiny](https://shiny.posit.co/r/getstarted/shiny-basics/lesson1/)
 
 
-# Data exploring and cleaning
-
 ```{r}
 #library
 library(tidyverse)
+library(circlize)
 library(ggpubr)
 library(patchwork)
+library(gridExtra)
+library(grid)
+library(gtable)
 library(ggbreak)
 library(knitr)
 library(shiny)
@@ -67,6 +77,32 @@ library(shiny)
 load(file = "C:/Users/marie/Documents/DSTI_Cours/R_big_Data/Exam/Enron_project/Enron.Rdata")
 ```
 
+
+```{r}
+#function to extract the legend from each plot
+get_legend <- function(p, #the plot need to be arrange on a same layout and shared the same legend
+                       nrow=2 #the number of row where the legend will be display, by default 2
+                       ){
+  
+  #override the guides to control the number of rows in legend
+  p_wrapped <- p + guides(
+    #allow to control how the legend is arrange 
+    fill = guide_legend(nrow = nrow, byrow = TRUE),
+    color = guide_legend(nrow = nrow, byrow = TRUE))
+  
+  #generate a temporary table with the graphical component
+  temp <- ggplotGrob(p_wrapped)
+  
+  #extract the legend, guide-box, and store it in a list
+  legend <- temp$grobs[which(sapply(temp$grobs, function(x) x$name) == "guide-box")]
+  
+  #return only one legend not the list of them
+  return(legend[[1]])
+} 
+```
+
+
+# Data exploring and cleaning
 
 ## First look at the data
 The aim of this part is to see :
@@ -541,7 +577,7 @@ df_message_status <- df_message_status %>%
 
 ```{r}
 #cleaning of the object no more necessary in the environment
-rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo, referenceinfo_2, df_message_missing, message_merge, recipient_merge, EmailID_sender1, EmailID_sender2, EmailID_sender3, EmailID_sender4, EmailID_recipient1, EmailID_recipient2, EmailID_recipient3, EmailID_recipient4, employee_merge1, employee_merge2, employee_merge3, employee_merge4, end, start, length_email_content, employee_merge_final, employee_merge_final2, employee_merge_final_recipient, employee_merge_final_recipient2)
+rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referenceinfo, referenceinfo_2, df_message_missing, message_merge, recipient_merge, EmailID_sender1, EmailID_sender2, EmailID_sender3, EmailID_sender4, EmailID_recipient1, EmailID_recipient2, EmailID_recipient3, EmailID_recipient4, employee_merge1, employee_merge2, employee_merge3, employee_merge4, end, start, length_email_content, employee_merge_final, employee_merge_final2, employee_merge_final_recipient, employee_merge_final_recipient2, dim_employee, dim_message, dim_recipient, dim_reference)
 ```
 
 ### Data analysis
@@ -1111,14 +1147,25 @@ The above plot shown that:
 Next, we look over the month of each year which are the worker status the most active. 
 
 For the employee.
-```{r}
+```{r fig.width=13}
 #list of status in the Enron company
 status_list <- c("Employee", "CEO", "Manager", "Director", "Vice President", "Trader", "President", "Managing Director", "In House Lawyer")
 
+month_label <- c("01" = "January","02" = "February","03" = "March","04" = "April","05" = "May","06" = "June","07" = "July","08" = "August",
+               "09" = "September","10" = "October","11" = "November","12" = "December")
+
+month_color <- c("01" = "lightgreen","02" = "lightsalmon4","03" = "lightblue","04" = "greenyellow","05" = "cyan","06" = "darkgreen","07" = "lavender",
+               "08" = "plum","09" = "coral","10" = "honeydew4","11" = "hotpink","12" = "indianred")
+
+#initiate the list for the plot
+email_send <- list()
+
 #loop allowing to construct a bar plot to display per month the number of email send in function of the worker status
-for(status in status_list)
-{print(df_message_status %>% 
-         filter(status_sender == status) %>% #take the value in the list
+for(i in seq(status_list)){
+  
+  status <- status_list[i]
+  
+  p <- df_message_status %>% filter(status_sender == status) %>% #take the value in the list
   group_by(year,month)%>%
   count() %>% 
     #bar plot
@@ -1126,11 +1173,49 @@ for(status in status_list)
   geom_bar(stat = "identity") +
   facet_grid(~year)+
   labs(title = paste("Email send per month for each year by the", status),
-       x = "Month",
        y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, vjust = 0.5)))}
+  scale_fill_manual(
+    values = month_color,
+    labels = month_label)+
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank())
+  
+  email_send[[i]] <- p}
+
+#display the plot create
+n <- length(email_send)
+
+plot_per_section <- 3
+
+for(j in seq(1,n,by=plot_per_section)){
+  
+  plot_on_the_page <- email_send[j:min(j+2, n)]
+  
+  #extract the legend from the first plot on the layout
+  legend <- get_legend(plot_on_the_page[[1]], nrow = 2)
+  
+  #remove the legend for all plot on the layout
+  no_legend <- lapply(plot_on_the_page, function(p) p + theme(legend.position = "none"))
+  
+  #display 4 plots per layout
+  grid_plot <- arrangeGrob(grobs = no_legend, ncol = 2)
+  
+  #combine together the 3 plot and one legend
+  plots_with_legend <- arrangeGrob(
+    grid_plot,
+    legend,
+    nrow = 2,
+    #arrange the plot and the legend in the layout
+    heights = unit.c(unit(1,"npc") - unit(7, "lines"), unit(7,"lines"))
+  )
+  
+  #display everything together
+  grid.newpage()
+  grid.draw(plots_with_legend)
+  
+}
 ```
 
 By looking year by year we can see that:
@@ -1144,18 +1229,66 @@ By looking year by year we can see that:
 - The trader are the 3rd group who send a high number of email per month which is logic with the company activity. 
 
 Now we look for the email receive in function of the Enron's worker status.
-```{r}
-for(status in status_list)
-{print(df_message_status %>% filter(status_sender == status) %>%
+```{r fig.width=13}
+#initiate the list for the plot
+email_received <- list()
+
+#loop allowing to construct a bar plot to display per month the number of email send in function of the worker status
+for(i in seq(status_list)){
+  
+  status <- status_list[i]
+  
+  p <- df_message_status %>% filter(status_recipient == status) %>% #take the value in the list
   group_by(year,month)%>%
-  count() %>% ggplot(aes(month, n, fill = month))+
+  count() %>% 
+    #bar plot
+    ggplot(aes(month, n, fill = month))+
   geom_bar(stat = "identity") +
   facet_grid(~year)+
   labs(title = paste("Email received per month for each year by the", status),
-       x = "Month",
        y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none"))}
+  scale_fill_manual(
+    values = month_color,
+    labels = month_label)+
+  theme(legend.position = "bottom",
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_blank())
+  
+  email_received[[i]] <- p}
+
+#display the plot create
+n <- length(email_received)
+
+plot_per_section <- 3
+
+for(j in seq(1,n,by=plot_per_section)){
+  
+  plot_on_the_page <- email_received[j:min(j+2, n)]
+  
+  #extract the legend from the first plot on the layout
+  legend <- get_legend(plot_on_the_page[[1]], nrow = 2)
+  
+  #remove the legend for all plot on the layout
+  no_legend <- lapply(plot_on_the_page, function(p) p + theme(legend.position = "none"))
+  
+  #display 4 plots per layout
+  grid_plot <- arrangeGrob(grobs = no_legend, ncol = 2)
+  
+  #combine together the 3 plot and one legend
+  plots_with_legend <- arrangeGrob(
+    grid_plot,
+    legend,
+    nrow = 2,
+    #arrange the plot and the legend in the layout
+    heights = unit.c(unit(1,"npc") - unit(7, "lines"), unit(7,"lines"))
+  )
+  
+  #display everything together
+  grid.newpage()
+  grid.draw(plots_with_legend)
+  
+}
 ```
 
 The plot above shows that: *read the analyse again to be sure*
@@ -1175,7 +1308,7 @@ The plot above shows that: *read the analyse again to be sure*
 
 ```{r}
 #envrionment cleaning
-rm(jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_plot2, violin_worker, status_list, p1, p2, send_vs_received)
+rm(jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_plot2, violin_worker, p1, p2, send_vs_received)
 ```
 
 ### Analyze of the email subject and content
@@ -1188,6 +1321,25 @@ Now we will look at the email subject as well as the email content. For that we 
 
 - email related to the core business of Enron like gas, power, trade.
 
+- in the core email we research word such as:
+
+  *mark-to-market which is related to the way they process to do the fiscal fraud
+  
+  *10-K which is the name of their annual financial report publish in Texas Journal and push some person to invest in the Enron company
+  
+  *losing money because in august 2001 an anlyste asking how Enron company can lose a lot of money after wining a lot.
+  
+  *SEC investigation where in mid-October 2001 the investigation by the SEC start to invest suspicious deals.
+  
+  *fears an emotion who is regularly wrote in the wikipedia article to describing the feeling of the investor as well as the employee of Enron after October 2001
+  
+  *correction since October 2001, the enron company start a process of correction on their revenue. We research this word in the email content and the subject.
+  
+  *bankruptcy to see from which date they start to speak of it.
+
+Each word/concept will be research individually in the email content to follow the email exchange whose containt them as well as the Enron's worker status imply in those exchange. 
+  
+
 To find those words list we will look at the subject and, when we have, the email content. 
 
 #### Research of the 4th topics in the email subjects.
@@ -1197,20 +1349,27 @@ To find those words list we will look at the subject and, when we have, the emai
 
 topic_meeting <- c("message|origin|pleas|email|thank|attach|file|copi|inform|receiv|thank|all|time|meet|look|week|day|dont|vinc|talk")
 
-topic_business_process <- c("enron|deal|agreement|chang|contract|corp|fax|houston|date|america")
+topic_business_process <- c("enron|deal|agreement|chang|contract|corp|fax|houston|date|america|risk|analy|confidential|correction")
 
 topic_core_business <- c("market|gas|price|power|company|energy|trade|busi|servic|manag")
 ```
 
 
 ```{r}
-#construction of the data set for measuring the frequency of the different topic in the email subject, we focus on the sender status
+#construction of the data set for measuring the frequency of the different topic in the email subject as well as the number of email with specific word, we focus on the sender status
 
-email_subject <- df_message_status %>% distinct(date, sender, status_sender, subject) %>%
+email_subject <- df_message_status %>% distinct(date, sender, status_sender, subject, reference) %>%
   mutate(#count the number of email which contain at least one word in the list of each topic
     topic_meeting = if_else(str_detect(subject, topic_meeting), 1, 0),
     topic_business_process = if_else(str_detect(subject, topic_business_process), 1, 0),
     topic_core_business = if_else(str_detect(subject, topic_core_business), 1, 0),
+    email_mark_to_market = if_else(str_detect(reference,"mark-to-market"), 1, 0),
+    email_10K_report = if_else(str_detect(reference, "10-K"), 1, 0),
+    email_losing_money = if_else(str_detect(reference, "losing money"), 1, 0),
+    email_SEC_investigation = if_else(str_detect(reference, "SEC"), 1, 0),
+    email_fear_feeling = if_else(str_detect(reference, "fears"), 1, 0),
+    email_correction = if_else(str_detect(reference,"correction"),1,0),
+    email_bankruptcy = if_else(str_detect(reference, "bankruptcy"), 1, 0),
     year = format(date, "%Y"),
     month=format(date,"%m"),
     #to get the date in year/month
@@ -1221,17 +1380,34 @@ email_subject <- df_message_status %>% distinct(date, sender, status_sender, sub
     sum_topic_meeting = sum(topic_meeting),
     sum_topic_business_process = sum(topic_business_process),
     sum_topic_core_business = sum(topic_core_business),
+    #for the email we use na.rm = TRUE to allow the sum to be done
+    sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
+    sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
+    sum_email_losing_money = sum(email_losing_money, na.rm = TRUE),
+    sum_email_SEC_investigation = sum(email_SEC_investigation, na.rm = TRUE),
+    sum_email_fear_feeling = sum(email_fear_feeling, na.rm = TRUE),
+    sum_email_correction = sum(email_correction, na.rm = TRUE),
+    sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)
     ) %>% ungroup() %>%
   #keep one line per year and month
-  distinct(year_month, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business)
+  distinct(year_month, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_email_mark_to_market,
+    sum_email_10K_report,
+    sum_email_losing_money,
+    sum_email_SEC_investigation,
+    sum_email_fear_feeling,
+    sum_email_correction,
+    sum_email_bankruptcy)
 ```
 
-```{r fig.width=15}
-#display the different topic trend over the study's period
-email_subject %>% 
+Because the number of line which contain email description is lower than the length of the table the research of the keyword about Enron event in the email create many NA value. To be able to compute the sum of the email which contain those word we use the parameter na.rm = TRUE which consider the NA as it is a 0 in the data set to compute the sum. 
+
+
+```{r fig.width=12}
+#display the different topic trend in the email subject over the study's period
+email_subject %>% select(year_month, starts_with("sum_topic_")) %>%
   #change the orientation of the data set
   pivot_longer(
-  cols = 2:length(email_subject),
+  cols = 2:4,
   names_to = "topics",
   values_to = "value") %>%
   #scatter plot and trend line
@@ -1245,9 +1421,9 @@ email_subject %>%
   #to display the year and month, every 3 months for a better reading
   scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
   scale_color_manual(
-    values = c("sum_topic_business_process" = "lightblue",
-    "sum_topic_core_business" = "pink",
-    "sum_topic_meeting" = "darkgreen"),
+    values = c("sum_topic_business_process" = "blue",
+    "sum_topic_core_business" = "lightgreen",
+    "sum_topic_meeting" = "chocolate"),
     labels = c(
     "sum_topic_business_process" = "Business process",
     "sum_topic_core_business" = "Core Business",
@@ -1269,76 +1445,641 @@ We can see that:
 
 - The for the business process and core topics we see 2 picks which follows the 2 last picks of the meeting topics. This suggest the topic of the meeting concern the business. We could think those meeting are more related to the business process than the business core.
 
-
-*try to find a way to analyze the person the more involved in the business legalities, see if we can find the more know in the scandal. !!!!!*
-
-The keyword in the topic business process concern the business legalities, we look at the status are involved in this topics. 
-
-```{r}
-test <-  df_message_status %>% distinct(date, sender, status_sender, subject) %>%
-  mutate(#count the number of email which contain at least one word in the list of each topic
-    topic_business_process = if_else(str_detect(subject, topic_business_process), 1, 0),
-    year = format(date, "%Y"),
-    month=format(date,"%m"),
-    #to get the date in year/month
-    year_month = as.Date(paste0(year,"-",month,"-01"))) %>%
-  filter(topic_business_process != 0) %>% select(-c(year,month,date))
+```{r fig.width=12}
+#display the different topic trend in the email subject over the study's period
+email_subject %>% select(year_month, starts_with("sum_email_")) %>%
+  #change the orientation of the data set
+  pivot_longer(
+  cols = 2:8,
+  names_to = "email",
+  values_to = "value") %>%
+  #scatter plot and trend line
+  ggplot(aes(year_month,value, color=email))+
+  geom_line(size = 1)+
+  #label, axis, and legend
+  labs(color = "Email content key words",
+    title = "Email key word about the Enron event in function of the year",
+       x = "year",
+       y = "Number of email per key words") +
+  #to display the year and month, every 3 months for a better reading
+  scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+  scale_color_manual(
+    values = c("sum_email_SEC_investigation" = "darkred",
+    "sum_email_10K_report" = "pink",
+    "sum_email_bankruptcy" = "darkgreen",
+    "sum_email_correction" = "orange",
+    "sum_email_mark_to_market" = "lavender",
+    "sum_email_losing_money" = "turquoise",
+    "sum_email_fear_feeling" = "darkblue"),
+    labels = c(
+    "sum_email_SEC_investigation" = "SEC Investigation",
+    "sum_email_10K_report" = "10-K report",
+    "sum_email_bankruptcy" = "Bankruptcy",
+    "sum_email_correction" = "Correction",
+    "sum_email_mark_to_market" = "mark-to-market process",
+    "sum_email_losing_money" = "Losing money",
+    "sum_email_fear_feeling" = "Fear feeling"))
 ```
+The graph above shows us that:
 
+- the email speaking about the mark-to-market process, losing money by the company, and the 10-K report represent the lowest number of email.
 
-On the enron scandal wikipedia page we find a list of person involved in the enron scandal. We will research them in the data set to see if we can analyse the subject of the email they send as well as if they play a role in the Enron scandal. source: [wikipedia page about Enron people](https://en.wikipedia.org/wiki/Category:Enron_people).
+- the top key words we can see in the email are bankruptcy and SEC investigation. 
 
+- it start to have exchange about the SEC investigation between July and October 2000 which is follow exchange about a bankruptcy between January and July 2001.
+  
+- The most important number of exchange about the SEC investigation are realized between July 20001 and January 2002. In parallel we saw also an important number of exchange about a bankruptcy for the company. 
+  
+- At the pick of exchange about SEC investigation and bankruptcy we saw email exchange containing fear feeling as well as exchange about financial correction.
+
+We pursue by looking for each email subject topics and email key words which type of Enron's worker status are the more active. 
+
+For that we create a similar data frame than the previous but by making the count of topics/email in function of the employee status
 ```{r}
-#to find the person involved in the fiscal fraud we use str_detect to see if we can find them in the data set
-#for example here for Vincent Kaminski
-people_of_interest <- df_message_status%>% filter(str_detect(df_message_status$sender,"kaminski"))
-```
-
-We are able to find in our data set :
-
-- Sally becker an employee which follow the operation in the company -> not find in the list of employee in wikipedia
-
-
-
-```{r}
-#extract the worker who are interesting to follow and compute the number of email send by them
-person_of_interest <- df_message_status %>% filter(str_detect(sender,"andrew.baker|tim.belden|andrew.fastow|lfastow|vkaminski|jordan.mintz|jeff.skilling|sherron.watkins")) %>% mutate(
-  #identify the person who sent the email
-  email_label = case_when(
-    #sender == "sally.beck@enron.com" ~ "Sally Beck",
-    sender == "kenneth.lay@enron.com" ~ "Kenneth Lay",
-    sender == "jeff.skilling@enron.com" ~ "Jeffrey Skilling",
-    sender == "andrew.baker@enron.com" ~ "Andrew Baker",
-    sender == "tim.belden@enron.com" ~ "Timothy Belden", 
-    sender == "lfastow@pop.pdq.net" ~ "Lea Fastow",
-    sender == "lfastow@pdq.net" ~ "Lea Fastow",
-    sender == "andrew.fastow@enron.com" ~ "Andrew Fastow",
-    sender == "vkaminski@enron.com" ~ "Vincent Kaminski",
-    sender == "jordan.mintz@enron.com" ~ "Jordan Mintz",
-    sender == "sherron.watkins@enron.com" ~ "Sherron Watkins")) %>% 
-  #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
-  group_by(date, email_label, subject) %>%
+status_email_subject <- df_message_status %>% distinct(date, sender, status_sender, subject, reference) %>%
   mutate(#count the number of email which contain at least one word in the list of each topic
     topic_meeting = if_else(str_detect(subject, topic_meeting), 1, 0),
     topic_business_process = if_else(str_detect(subject, topic_business_process), 1, 0),
     topic_core_business = if_else(str_detect(subject, topic_core_business), 1, 0),
-    #topic_informal = if_else(str_detect(subject, topic_informal), 1, 0),
-    year = format(date, "%Y"),
-    month=format(date,"%m"),
-    #to get the date in year/month
-    year_month = as.Date(paste0(year,"-",month,"-01"))) %>%
-  #compute the sum of each topics for each month of each year study
-  group_by(year_month) %>%
+    email_mark_to_market = if_else(str_detect(reference,"mark-to-market"), 1, 0),
+    email_10K_report = if_else(str_detect(reference, "10-K"), 1, 0),
+    email_losing_money = if_else(str_detect(reference, "losing money"), 1, 0),
+    email_SEC_investigation = if_else(str_detect(reference, "SEC"), 1, 0),
+    email_fear_feeling = if_else(str_detect(reference, "fears"), 1, 0),
+    email_correction = if_else(str_detect(reference,"correction"),1,0),
+    email_bankruptcy = if_else(str_detect(reference, "bankruptcy"), 1, 0),
+    year = format(date, "%Y")) %>%
+  #we focus on the worker which their status are know
+  filter(!is.na(status_sender)) %>%
+  #compute the sum of each topics for each year studied
+  group_by(year, status_sender) %>%
   mutate(
     sum_topic_meeting = sum(topic_meeting),
     sum_topic_business_process = sum(topic_business_process),
     sum_topic_core_business = sum(topic_core_business),
+    #for the email we use na.rm = TRUE to allow the sum to be done
+    sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
+    sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
+    sum_email_losing_money = sum(email_losing_money, na.rm = TRUE),
+    sum_email_SEC_investigation = sum(email_SEC_investigation, na.rm = TRUE),
+    sum_email_fear_feeling = sum(email_fear_feeling, na.rm = TRUE),
+    sum_email_correction = sum(email_correction, na.rm = TRUE),
+    sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)
     ) %>% ungroup() %>%
   #keep one line per year and month
-  distinct(year_month, email_label, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business)
+  distinct(year, status_sender, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_email_mark_to_market,
+    sum_email_10K_report,
+    sum_email_losing_money,
+    sum_email_SEC_investigation,
+    sum_email_fear_feeling,
+    sum_email_correction,
+    sum_email_bankruptcy)
+
+#pivot the data frame
+status_email_subject <- status_email_subject %>%
+  pivot_longer(
+    cols = 3:length(status_email_subject),
+    names_to = "topic_email",
+    values_to = "value")
+
 ```
 
-*finish to process the topics*
+
+```{r fig.width=13}
+#initiate the list to collect the plot
+plot_list <- list()
+
+#generating individual plot for each status
+for(i in seq(status_list)){
+  #assign the status to the variable
+  status <- status_list[i]
+  
+  #the plot related to that status
+  p <- status_email_subject %>% filter(status_sender == status) %>%
+         ggplot(aes(topic_email,value, fill = topic_email))+
+         geom_bar(stat = "identity") +
+       facet_grid(~year)+
+         labs(fill = "Email content key words",
+           title = paste("Email send about Enron's event and function by", status),
+           y = "Email count per category research")+
+         scale_fill_manual(values = c("sum_email_SEC_investigation" = "darkred",
+                                      "sum_email_10K_report" = "pink",
+                                      "sum_email_bankruptcy" = "darkgreen",
+                                      "sum_email_correction" = "orange",
+                                      "sum_email_mark_to_market" = "lavender",
+                                      "sum_email_losing_money" = "turquoise",
+                                      "sum_email_fear_feeling" = "darkblue",
+                                      "sum_topic_business_process" = "blue",
+                                      "sum_topic_core_business" = "lightgreen",
+                                      "sum_topic_meeting" = "chocolate"),
+                    labels = c("sum_email_SEC_investigation" = "SEC Investigation email",
+                               "sum_email_10K_report" = "10-K report email",
+                               "sum_email_bankruptcy" = "Bankruptcy email",
+                               "sum_email_correction" = "Correction email",
+                               "sum_email_mark_to_market" = "mark-to-market process email",
+                               "sum_email_losing_money" = "Losing money email",
+                               "sum_email_fear_feeling" = "Fear feeling email",
+                               "sum_topic_business_process" = "Business process email topic",
+                               "sum_topic_core_business" = "Core Business email topic",
+                               "sum_topic_meeting" = "Meeting email topic"))+
+        theme(legend.text.position = "bottom",
+           axis.title.x = element_blank(),
+           axis.text.x = element_blank(),
+               axis.ticks.x = element_blank())
+  
+  #append the plot list
+  plot_list[[i]] <- p
+}
+
+
+#display the plot created
+n <- length(plot_list)
+
+#number of plot per layout
+plot_per_section <- 3
+
+#create plot layouts
+for (i in seq(1, n, by=plot_per_section)){
+  
+  plot_on_the_page <- plot_list[i:min(i+2, n)]
+  
+  #extract the legend from the first plot on the layout
+  legend <- get_legend(plot_on_the_page[[1]], nrow = 2)
+  
+  #remove the legend for all plot on the layout
+  no_legend <- lapply(plot_on_the_page, function(p) p + theme(legend.position = "none"))
+  
+  #display 4 plots per layout
+  grid_plot <- arrangeGrob(grobs = no_legend, ncol = 2)
+  
+  #combine together the 3 plot and one legend
+  plots_with_legend <- arrangeGrob(
+    grid_plot,
+    legend,
+    nrow = 2,
+    #arrange the plot and the legend in the layout
+    heights = unit.c(unit(1,"npc") - unit(7, "lines"), unit(7,"lines"))
+  )
+  
+  #display everything together
+  grid.newpage()
+  grid.draw(plots_with_legend)
+  
+}
+
+```
+
+By analyzing the email subject and the email content in function of the Enron's worker status we can see that:
+
+- in general the email send by each status are about meeting or business process.
+
+- For the employee in 2001, they send some email which talk about bankruptcy, correction, and SEC investigation.
+
+- For the CEO it seems in his email we only can find the word bankruptcy. Maybe is because it try to avoid it.
+
+- For the manager in 2001 we find email where we can find the different key words except about the mark-to-market process.
+
+- The trader and Director in 2001 are the only group status to talk about mark-to-market in their email. Maybe is because they are the more involved in it.
+
+- For the trader, in 2000 we find email which talk about SEC investigation as well as loosing money. Maybe it is because they are worry to be spotlight on the fiscal manipulation they did for the Enron company. 
+
+- The vice president talk about bankruptcy, correction and seems to express fear on their email exchange in 2001. They also exchange more about the SEC investigation in 2001 than in 2000.
+
+- The President send email about bankruptcy, correction, express fear, and SEC investigation in 2001 especially. They also exchange on those topics in 2002.
+
+- It is the Managing director and the in house lawyer are the group who exchange the most about mark-to-market even it is still a low number of email, proportionally speaking, they are them which talk the most about it. We can thing they are the group the more imply in this process.
+
+- the in house lawyer exchange especially around the SEC investigation and the bankruptcy maybe because they are invest in this for a legal point of view and/or to discuss with the federal agency for manage the investigation. 
+
+We now look if along the year it as a change in the interaction between the Enron's worker with a knowing status.
+For that per year we draw chord diagram which allows to follow the links between group.
+
+```{r}
+#plot for each year follow the exchange between group
+
+per_year <- df_message_status %>% select(date, status_sender, status_recipient) %>%
+  filter(!is.na(status_sender) & !is.na(status_recipient)) %>%
+  mutate(year = format(date,"%Y")) %>%
+  group_by(date,status_sender, status_recipient) %>%
+  mutate(number_exchange = n()) %>% ungroup() %>%
+  distinct(date, status_sender, status_recipient, number_exchange, year)
+
+year_1999 <- as.data.frame(per_year %>% filter(year == 1999) %>%
+  group_by(status_sender, status_recipient) %>%
+  mutate(sum = sum(number_exchange)) %>% ungroup() %>%
+  distinct(status_sender, status_recipient, sum) %>%
+    filter(status_sender != status_recipient) %>%
+    arrange(status_sender, status_recipient)
+)
+
+year_2000 <- as.data.frame(per_year %>% filter(year == 2000) %>%
+  group_by(status_sender, status_recipient) %>%
+  mutate(sum = sum(number_exchange)) %>% ungroup() %>%
+  distinct(status_sender, status_recipient, sum) %>%
+    filter(status_sender != status_recipient) %>%
+    arrange(status_sender, status_recipient)
+)
+
+year_2001 <- as.data.frame(per_year %>% filter(year == 2001) %>%
+  group_by(status_sender, status_recipient) %>%
+  mutate(sum = sum(number_exchange)) %>% ungroup() %>%
+  distinct(status_sender, status_recipient, sum) %>%
+    filter(status_sender != status_recipient) %>%
+    arrange(status_sender, status_recipient)
+)
+
+year_2002 <- as.data.frame(per_year %>% filter(year == 2002) %>%
+  group_by(status_sender, status_recipient) %>%
+  mutate(sum = sum(number_exchange)) %>% ungroup() %>%
+  distinct(status_sender, status_recipient, sum) %>%
+    filter(status_sender != status_recipient) %>%
+    arrange(status_sender, status_recipient)
+)
+
+#the color for each status
+status_color <- c(
+  "Employee" = "pink",
+  "Director" = "yellowgreen",
+  "CEO" = "orange",
+  "Vice President" = "tomato4",
+  "Trader" = "springgreen3",
+  "President" = "snow4",
+  "Managing Director" = "violetred4",
+  "Manager" = "skyblue3",
+  "In House Lawyer" = "purple4")
+
+```
+
+Display the chord diagram of the year 1999
+```{r}
+adjacencyData_99 <-with(year_1999, table(status_sender, status_recipient))
+chordDiagram(adjacencyData_99, transparency = 0.5, grid.col = status_color)
+```
+
+year 2000
+```{r}
+adjacencyData_00 <-with(year_2000, table(status_sender, status_recipient))
+chordDiagram(adjacencyData_00, transparency = 0.5, grid.col = status_color)
+```
+
+year 2001
+```{r}
+adjacencyData_01 <-with(year_2001, table(status_sender, status_recipient))
+chordDiagram(adjacencyData_01, transparency = 0.5, grid.col = status_color)
+```
+
+year 2002
+```{r}
+adjacencyData_02 <-with(year_2002, table(status_sender, status_recipient))
+chordDiagram(adjacencyData_02, transparency = 0.5, grid.col = status_color)
+```
+
+
+```{r}
+#global environment cleaning
+rm(grid_plot, i, j, month_color, month_label, n, no_legend, p, p3, p4, plot_list, plot_on_the_page, plot_per_section, plots_with_legend, status, status_list,
+   status_email_subject, adjacencyData_99, adjacencyData_00, adjacencyData_01, adjacencyData_02)
+```
+
+
+On the Enron scandal wikipedia page we find a list of person involved in the Enron scandal. 
+We will research them in the data set to see if we can analyse the subject of the email they send as well as if they play a role in the Enron scandal. 
+source: [wikipedia page about Enron timeline downfall](https://en.wikipedia.org/wiki/Enron_scandal#Timeline_of_downfall).
+
+```{r}
+#to find the person involved in the fiscal fraud we use str_detect to see if we can find them in the data set
+#for example here for Vincent Kaminski
+people_of_interest <- df_message_status%>% filter(str_detect(sender,"kaminski"))
+```
+
+*short description of the different player and their role in the enron fraud*
+
+First we look at the number of email send about those subjects
+```{r}
+#extract the worker who are interesting to follow and compute the number of email send by them
+person_of_interest_send <- df_message_status %>% filter(str_detect(sender,"andrew.baker|tim.belden|andrew.fastow|lfastow|vkaminski|jordan.mintz|jeff.skilling|sherron.watkins|richard.causey|greg.whalley")) %>%
+  mutate(
+  #identify the person who sent the email
+  email_label_sender = case_when(
+    sender == "kenneth.lay@enron.com" ~ "Kenneth Lay",
+    sender == "jeff.skilling@enron.com" ~ "Jeffrey Skilling",
+    sender == "andrew.baker@enron.com" ~ "Andrew Baker",
+    sender == "tim.belden@enron.com" ~ "Timothy Belden", 
+    sender %in% c("lfastow@pop.pdq.net", "lfastow@pdq.net") ~ "Lea Fastow",
+    sender == "andrew.fastow@enron.com" ~ "Andrew Fastow",
+    sender %in% c("vkaminski@enron.com", "vkaminski@aol.com", "vkaminski@palm.net") ~ "Vincent Kaminski",
+    sender == "jordan.mintz@enron.com" ~ "Jordan Mintz",
+    sender == "sherron.watkins@enron.com" ~ "Sherron Watkins",
+    sender == "richard.causey@enron.com" ~ "Richard Causey", #chief account officer wikipedia source
+    sender == "greg.whalley@enron.com" ~ "Greg Whalley", #president and COO of Enron wholesale service
+    .default = sender)) %>% 
+  #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
+  group_by(date, email_label_sender, subject, reference) %>%
+  mutate(#count the number of email which contain at least one word in the list of each topic
+    topic_meeting = if_else(str_detect(subject, topic_meeting), 1, 0),
+    topic_business_process = if_else(str_detect(subject, topic_business_process), 1, 0),
+    topic_core_business = if_else(str_detect(subject, topic_core_business), 1, 0),
+    email_mark_to_market = if_else(str_detect(reference,"mark-to-market"), 1, 0),
+    email_10K_report = if_else(str_detect(reference, "10-K"), 1, 0),
+    email_losing_money = if_else(str_detect(reference, "losing money"), 1, 0),
+    email_SEC_investigation = if_else(str_detect(reference, "SEC"), 1, 0),
+    email_fear_feeling = if_else(str_detect(reference, "fears"), 1, 0),
+    email_correction = if_else(str_detect(reference,"correction"),1,0),
+    email_bankruptcy = if_else(str_detect(reference, "bankruptcy"), 1, 0),
+    year = format(date, "%Y")) %>%
+  #compute the sum of each topics for each month of each year study
+  group_by(year) %>%
+  mutate(
+    sum_topic_meeting = sum(topic_meeting),
+    sum_topic_business_process = sum(topic_business_process),
+    sum_topic_core_business = sum(topic_core_business),
+     #for the email we use na.rm = TRUE to allow the sum to be done
+    sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
+    sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
+    sum_email_losing_money = sum(email_losing_money, na.rm = TRUE),
+    sum_email_SEC_investigation = sum(email_SEC_investigation, na.rm = TRUE),
+    sum_email_fear_feeling = sum(email_fear_feeling, na.rm = TRUE),
+    sum_email_correction = sum(email_correction, na.rm = TRUE),
+    sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)
+    ) %>% ungroup() %>%
+  #keep one line per year and month
+  distinct(year, email_label_sender, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business,sum_email_mark_to_market,
+    sum_email_10K_report,
+    sum_email_losing_money,
+    sum_email_SEC_investigation,
+    sum_email_fear_feeling,
+    sum_email_correction,
+    sum_email_bankruptcy) %>% 
+  #filter to get only the date with email exchange for at least one of those topics
+  filter((sum_topic_business_process != 0)|(sum_topic_meeting != 0)|(sum_topic_core_business !=0)|
+           (sum_email_mark_to_market!=0)|(sum_email_10K_report != 0)|
+           (sum_email_losing_money!=0)|(sum_email_SEC_investigation!=0)|(sum_email_fear_feeling!=0)|
+           (sum_email_correction!=0)|(sum_email_bankruptcy!=0))
+
+#pivot the table
+person_of_interest_send <-person_of_interest_send %>%
+  pivot_longer(
+  cols = 3:length(person_of_interest_send),
+  names_to = "topic_email",
+  values_to = "value"
+)
+```
+
+For each Enron's worker know for being involved in the different Enron's events we will look at the number of email
+```{r fig.width=13}
+enron_worker <- c("Jeffrey Skilling", "Andrew Baker","Timothy Belden","Lea Fastow","Andrew Fastow","Vincent Kaminski","Jordan Mintz",
+                  "Sherron Watkins","Richard Causey", "Greg Whalley")
+
+#initiate the list to collect the plot
+plot_list <- list()
+
+#generating individual plot for each status
+for(i in seq(enron_worker)){
+  #assign the status to the variable
+  worker <- enron_worker[i]
+  
+  #the plot related to that status
+  p <- person_of_interest_send %>% filter(email_label_sender == worker)%>% 
+    ggplot(aes(topic_email,value, fill = topic_email))+
+         geom_bar(stat = "identity") +
+       facet_grid(~year)+
+         labs(fill = "Email content key words and topics",
+           title = paste("Email send about Enron's event and function by", worker),
+           y = "Email count per category research")+
+         scale_fill_manual(values = c("sum_email_SEC_investigation" = "darkred",
+                                      "sum_email_10K_report" = "pink",
+                                      "sum_email_bankruptcy" = "darkgreen",
+                                      "sum_email_correction" = "orange",
+                                      "sum_email_mark_to_market" = "lavender",
+                                      "sum_email_losing_money" = "turquoise",
+                                      "sum_email_fear_feeling" = "darkblue",
+                                      "sum_topic_business_process" = "blue",
+                                      "sum_topic_core_business" = "lightgreen",
+                                      "sum_topic_meeting" = "chocolate"),
+                    labels = c("sum_email_SEC_investigation" = "SEC Investigation email",
+                               "sum_email_10K_report" = "10-K report email",
+                               "sum_email_bankruptcy" = "Bankruptcy email",
+                               "sum_email_correction" = "Correction email",
+                               "sum_email_mark_to_market" = "mark-to-market process email",
+                               "sum_email_losing_money" = "Losing money email",
+                               "sum_email_fear_feeling" = "Fear feeling email",
+                               "sum_topic_business_process" = "Business process email topic",
+                               "sum_topic_core_business" = "Core Business email topic",
+                               "sum_topic_meeting" = "Meeting email topic"))+
+        theme(legend.text.position = "bottom",
+           axis.title.x = element_blank(),
+           axis.text.x = element_blank(),
+               axis.ticks.x = element_blank())
+  
+  #append the plot list
+  plot_list[[i]] <- p
+}
+
+
+#display the plot created
+n <- length(plot_list)
+
+#number of plot per layout
+plot_per_section <- 3
+
+#create plot layouts
+for (i in seq(1, n, by=plot_per_section)){
+  
+  plot_on_the_page <- plot_list[i:min(i+2, n)]
+  
+  #extract the legend from the first plot on the layout
+  legend <- get_legend(plot_on_the_page[[1]], nrow = 2)
+  
+  #remove the legend for all plot on the layout
+  no_legend <- lapply(plot_on_the_page, function(p) p + theme(legend.position = "none"))
+  
+  #display 4 plots per layout
+  grid_plot <- arrangeGrob(grobs = no_legend, ncol = 2)
+  
+  #combine together the 3 plot and one legend
+  plots_with_legend <- arrangeGrob(
+    grid_plot,
+    legend,
+    nrow = 2,
+    #arrange the plot and the legend in the layout
+    heights = unit.c(unit(1,"npc") - unit(7, "lines"), unit(7,"lines"))
+  )
+  
+  #display everything together
+  grid.newpage()
+  grid.draw(plots_with_legend)
+  
+}
+
+```
+
+From the list at the beginning only Kenneth Lay isn't find for sending email about those subject.
+
+Next we look at the number of email received about those topics
+```{r}
+#extract the worker who are interesting to follow and compute the number of email send by them
+person_of_interest_reciveid <- df_message_status %>%
+  filter(str_detect(recipient,"andrew.baker|tim.belden|andrew.fastow|lfastow|vkaminski|jordan.mintz|jeff.skilling|sherron.watkins|richard.causey|greg.whalley")) %>%
+  mutate(
+  #identify the person who sent the email
+  email_label_recipient = case_when(
+    recipient == "kenneth.lay@enron.com" ~ "Kenneth Lay",
+    recipient == "jeff.skilling@enron.com" ~ "Jeffrey Skilling",
+    recipient == "andrew.baker@enron.com" ~ "Andrew Baker",
+    recipient == "tim.belden@enron.com" ~ "Timothy Belden", 
+    recipient %in% c("lfastow@pop.pdq.net", "lfastow@pdq.net") ~ "Lea Fastow",
+    recipient == "andrew.fastow@enron.com" ~ "Andrew Fastow",
+    recipient %in% c("vkaminski@enron.com", "vkaminski@aol.com", "vkaminski@palm.net") ~ "Vincent Kaminski",
+    recipient == "jordan.mintz@enron.com" ~ "Jordan Mintz",
+    recipient == "sherron.watkins@enron.com" ~ "Sherron Watkins",
+    recipient == "richard.causey@enron.com" ~ "Richard Causey", #chief account officer wikipedia source
+    recipient == "greg.whalley@enron.com" ~ "Greg Whalley", #president and COO of Enron wholesale service
+    .default = recipient)) %>% 
+  #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
+  group_by(date,email_label_recipient, subject, reference) %>%
+  mutate(#count the number of email which contain at least one word in the list of each topic
+    topic_meeting = if_else(str_detect(subject, topic_meeting), 1, 0),
+    topic_business_process = if_else(str_detect(subject, topic_business_process), 1, 0),
+    topic_core_business = if_else(str_detect(subject, topic_core_business), 1, 0),
+    email_mark_to_market = if_else(str_detect(reference,"mark-to-market"), 1, 0),
+    email_10K_report = if_else(str_detect(reference, "10-K"), 1, 0),
+    email_losing_money = if_else(str_detect(reference, "losing money"), 1, 0),
+    email_SEC_investigation = if_else(str_detect(reference, "SEC"), 1, 0),
+    email_fear_feeling = if_else(str_detect(reference, "fears"), 1, 0),
+    email_correction = if_else(str_detect(reference,"correction"),1,0),
+    email_bankruptcy = if_else(str_detect(reference, "bankruptcy"), 1, 0),
+    year = format(date, "%Y")) %>%
+  #compute the sum of each topics for each month of each year study
+  group_by(year) %>%
+  mutate(
+    sum_topic_meeting = sum(topic_meeting),
+    sum_topic_business_process = sum(topic_business_process),
+    sum_topic_core_business = sum(topic_core_business),
+     #for the email we use na.rm = TRUE to allow the sum to be done
+    sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
+    sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
+    sum_email_losing_money = sum(email_losing_money, na.rm = TRUE),
+    sum_email_SEC_investigation = sum(email_SEC_investigation, na.rm = TRUE),
+    sum_email_fear_feeling = sum(email_fear_feeling, na.rm = TRUE),
+    sum_email_correction = sum(email_correction, na.rm = TRUE),
+    sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)
+    ) %>% ungroup() %>%
+  #keep one line per year and month
+  distinct(year, email_label_recipient, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business,sum_email_mark_to_market,
+    sum_email_10K_report,
+    sum_email_losing_money,
+    sum_email_SEC_investigation,
+    sum_email_fear_feeling,
+    sum_email_correction,
+    sum_email_bankruptcy) %>% 
+  #filter to get only the date with email exchange for at least one of those topics
+  filter((sum_topic_business_process != 0)|(sum_topic_meeting != 0)|(sum_topic_core_business !=0)|
+           (sum_email_mark_to_market!=0)|(sum_email_10K_report != 0)|
+           (sum_email_losing_money!=0)|(sum_email_SEC_investigation!=0)|(sum_email_fear_feeling!=0)|
+           (sum_email_correction!=0)|(sum_email_bankruptcy!=0))
+
+#pivot the table
+person_of_interest_reciveid <-person_of_interest_reciveid %>%
+  pivot_longer(
+  cols = 3:length(person_of_interest_reciveid),
+  names_to = "topic_email",
+  values_to = "value"
+)
+```
+
+Display the email received about those topics for each Enron's worker knows to be imply in the Enron events
+```{r fig.width=13}
+enron_worker <- c("Jeffrey Skilling", "Andrew Baker","Timothy Belden","Lea Fastow","Andrew Fastow","Vincent Kaminski","Jordan Mintz",
+                  "Sherron Watkins","Richard Causey", "Greg Whalley")
+
+#initiate the list to collect the plot
+plot_list <- list()
+
+#generating individual plot for each status
+for(i in seq(enron_worker)){
+  #assign the status to the variable
+  worker <- enron_worker[i]
+  
+  #the plot related to that status
+  p <- person_of_interest_reciveid %>% filter(email_label_recipient == worker)%>% 
+    ggplot(aes(topic_email,value, fill = topic_email))+
+         geom_bar(stat = "identity") +
+       facet_grid(~year)+
+         labs(fill = "Email content key words and topics",
+           title = paste("Email received about Enron's event and function by", worker),
+           y = "Email count per category research")+
+         scale_fill_manual(values = c("sum_email_SEC_investigation" = "darkred",
+                                      "sum_email_10K_report" = "pink",
+                                      "sum_email_bankruptcy" = "darkgreen",
+                                      "sum_email_correction" = "orange",
+                                      "sum_email_mark_to_market" = "lavender",
+                                      "sum_email_losing_money" = "turquoise",
+                                      "sum_email_fear_feeling" = "darkblue",
+                                      "sum_topic_business_process" = "blue",
+                                      "sum_topic_core_business" = "lightgreen",
+                                      "sum_topic_meeting" = "chocolate"),
+                    labels = c("sum_email_SEC_investigation" = "SEC Investigation email",
+                               "sum_email_10K_report" = "10-K report email",
+                               "sum_email_bankruptcy" = "Bankruptcy email",
+                               "sum_email_correction" = "Correction email",
+                               "sum_email_mark_to_market" = "mark-to-market process email",
+                               "sum_email_losing_money" = "Losing money email",
+                               "sum_email_fear_feeling" = "Fear feeling email",
+                               "sum_topic_business_process" = "Business process email topic",
+                               "sum_topic_core_business" = "Core Business email topic",
+                               "sum_topic_meeting" = "Meeting email topic"))+
+        theme(legend.text.position = "bottom",
+           axis.title.x = element_blank(),
+           axis.text.x = element_blank(),
+               axis.ticks.x = element_blank())
+  
+  #append the plot list
+  plot_list[[i]] <- p
+}
+
+
+#display the plot created
+n <- length(plot_list)
+
+#number of plot per layout
+plot_per_section <- 3
+
+#create plot layouts
+for (i in seq(1, n, by=plot_per_section)){
+  
+  plot_on_the_page <- plot_list[i:min(i+2, n)]
+  
+  #extract the legend from the first plot on the layout
+  legend <- get_legend(plot_on_the_page[[1]], nrow = 2)
+  
+  #remove the legend for all plot on the layout
+  no_legend <- lapply(plot_on_the_page, function(p) p + theme(legend.position = "none"))
+  
+  #display 4 plots per layout
+  grid_plot <- arrangeGrob(grobs = no_legend, ncol = 2)
+  
+  #combine together the 3 plot and one legend
+  plots_with_legend <- arrangeGrob(
+    grid_plot,
+    legend,
+    nrow = 2,
+    #arrange the plot and the legend in the layout
+    heights = unit.c(unit(1,"npc") - unit(7, "lines"), unit(7,"lines"))
+  )
+  
+  #display everything together
+  grid.newpage()
+  grid.draw(plots_with_legend)
+  
+}
+
+```
+
+From the list at the beginning only Kenneth Lay isn't find for reciving email about those subject.
+
+*make the analyse of the 2 above plot about the email send/received by the enron employee directly involved*
+
+
 
 # !!!List of thing need to be achieved !!!
 => for the referenceinfo make an analysis of the message content or do it with the subject from recipientinfo table where is more exhaustive. 
