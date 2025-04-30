@@ -1006,13 +1006,9 @@ year_2002 <- as.data.frame(per_year %>% filter(year == 2002) %>%
 #the color for each status
 status_color <- c(
   "Employee" = "pink",
-  #"Director" = "yellowgreen",
   "CEO - President" = "orange",
-  #"Vice President" = "tomato4",
   "Trader" = "springgreen3",
-  #"President" = "snow4",
   "Manger - Director" = "violetred4",
-  #"Manager" = "skyblue3",
   "In House Lawyer" = "purple4")
 
 ```
@@ -1041,8 +1037,15 @@ adjacencyData_02 <-with(year_2002, table(status_sender, status_recipient))
 chordDiagram(adjacencyData_02, transparency = 0.5, grid.col = status_color)
 ```
 
-**To summarize the observation on email exchange over the study period,**
-**The employee is the group of worker who are the most active in the email exchange. During the fiscal fraud investigation we observed a pick of email exchange especially for the group at the head of the company and the lawyer group.**
+For the email exchange we can see that:
+
+ - The trader in 1999 exchange only with employee but then they exchange also with manager/director and CEO/president. Surprinsigly it seems the trader never exchange with the in house lawyer. Maybe their email exchange are undirect.
+ 
+ - In 2002 the in house lawyer have received emain only from the manager/director. But at this period, we don't see the email flux from the in house lawyer to other worker in the company with a knowing status. Maybe they send email to external person for managing the bankruptcy of the company with the info they received from the manager and director.
+ 
+ - The in house Lawyer exchange in 2000 only with the manager/director and the CEO/President but in 2001 they also exchange with employee. Maybe the change in the email flux for the in house lawyer is related to the Enron event where it could have a need to inform the employee about some affair for they can answer to the SEC investigations. 
+
+**This last analyze highlight the change in the email flux over the study period. Some change could be linked with the Enron event.**
 
 ##### The number of email send/receive per month over the year. 
 
