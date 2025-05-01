@@ -486,9 +486,14 @@ month_color <- c("01" = "lightgreen","02" = "lightsalmon4","03" = "lightblue","0
 
 status_list <- c("Employee", "CEO", "Manager", "Director", "Vice President", "Trader", "President", "Managing Director", "In House Lawyer")
 
+enron_worker_rec <- c("Jeff Dasovich", "Jeffrey Skilling", "Timothy Belden","Lea Fastow","Andrew Fastow",
+                  "Vincent Kaminski","Jordan Mintz","Sherron Watkins","Richard Causey", "Greg Whalley")
+
 #Kept only what is needed for the app to create the visualization
 rm(employee_merge_final_recipient2, employee_merge_final_recipient, employee_merge_final2, employee_merge_final, employeelist, message, message_2,df_message, recipientinfo, 
    recipientinfo_2, refenreceinfo, referenceinfo_2)
+
+
 
 #### front end UI
 
@@ -659,7 +664,7 @@ ui <- dashboardPage(
                          selectizeInput(
                            "rec_choice", "Select the worker:",
                            choices = enron_worker_rec,
-                           selected = enron_worker_rec),
+                           selected = NULL),
                          plotOutput("EnronWorkerRec")
                          ))
                   
