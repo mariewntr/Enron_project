@@ -613,9 +613,11 @@ employeelist_2 %>% select(status) %>% #select the needed variable
   labs(y = "Percentage (%)",x = "Employee status") +
   scale_fill_brewer(palette = "Set3", 
                     #to display the NA in grey on the graph
-                    na.value = "grey50")+
+                    na.value = "grey50"
+                    )+
   theme(legend.position = "none")
 ```
+
 
 The above bar chart shows us that:
 
@@ -640,29 +642,28 @@ df_message_status <- df_message_status %>%
     month = as.factor(month))
 ```
 
-Compute the number of email send per month over the 4 years
+
 ```{r}
-df_message_status %>% group_by(year,month, sender, subject)%>%
+df_message_status %>% group_by(year,month)%>%
   count() %>%
-  ggplot(aes(month, n, fill = month))+
-  geom_bar(stat = "identity")+
-  facet_grid(~year) +
+  ggplot(aes(month, n, group = year, color = year))+
+  geom_line(size = 1)+
+  scale_y_continuous(labels = scales::label_comma())+
   labs(title = "Number of email send/receive per month by the Enron's worker",
        x = "Month",
        y = "Email count per month")+
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none")
+  scale_fill_brewer(palette = "Set3")
 ```
 
 The above plot shown that:
 
 - For the year 1999 the email exchange is low. We find the same rate in April, 2002. 
 
-- Over the year 2000 the number of email exchange between Enron's worker increase gradually to be at his higher level in December, 2000. 
+- Over the year 2000 the number of email exchange between Enron's worker increase gradually to be at his higher level in November, 2000. 
 
-- In the year 2001 we see a pick of email exchange during April and May. This period in 2001 is when the fiscal fraud start to be discover. Then the number of exchange decrease during the summer to gain the pick in October which is also the period when the fiscal fraud is discover by the Fiscal agency of United State. 
+- In the year 2001 we see a pick of email exchange during April and May. This period in 2001 is when the fiscal fraud start to be discover. Then the number of exchange decrease during the summer to gain the pick in October which is also the period when the company is under the SEC investigation. 
 
-- The email exchange stop in July 2002. Maybe the date when the company was completely close. At the start of the 2002 (in January and February) we still see a high number of email exchange. Maybe this is due to the acheivement of the fiscal fraud investigation and it's consequences for the company. 
+- The email exchange stop in May 2002. Maybe the date when the company was completely close. At the start of the 2002 (in January and February) we still see a high number of email exchange. Maybe this is due to the achievement of the fiscal fraud investigation and it's consequences for the company. 
 
 
 #### Description of the number of email send and receive
@@ -689,7 +690,7 @@ To picture in the company who is the type of Enron's worker the most active in t
 Start with the email send.
 ```{r}
 #compute the number of email send per day per employee statuts
-violin_worker <- df_message_status %>%   filter(!is.na(status_sender)) %>%
+violin_worker <- df_message_status %>% filter(!is.na(status_sender)) %>%
   group_by(date, status_sender) %>%
   summarise(email_count = n(), .groups = "drop")
 
@@ -699,7 +700,8 @@ ggplot(violin_worker, aes(as.factor(status_sender), email_count, fill = as.facto
   geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
   ylim(c(0,250))+
   stat_compare_means(method = "anova", label.y = 250, size = 4)+
-  labs(title = "Comparison of the email count between the enron's worker statuts",
+  labs(title = "Comparison of the number of email send email in function 
+       of the enron's worker statuts",
        x = "Source",
        y = "Email count per day") +
   theme(legend.position = "none")
@@ -1197,7 +1199,7 @@ for(j in seq(1,n,by=plot_per_section)){
 }
 ```
 
-The plot above shows that: *read the analyse again to be sure*
+The plot above shows that: 
 
 - Like for the email send, it is the employee who receive the higher number. They follow the same trend as we saw for the email send suggesting they are active in email exchange in general. 
 
@@ -1216,7 +1218,7 @@ rm(jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_pl
 
 
 Now we try to see who is the most active in the email exchange.
-For that, we start by counting the number of eamil send per each worker and return the 10 persons who send the highest number.
+For that, we start by counting the number of email send per each worker and return the 10 persons who send the highest number.
 ```{r}
 #Display the top 10 email address of sender
 p1 <- df_message_status %>% group_by(sender)%>% count() %>% #to count the number of email send per email address
@@ -1280,7 +1282,7 @@ In the employee data set he is described to be an Employee of Enron. To see if i
 For that we will compute descriptive comparative statistic between them.
 ```{r}
 #count the number of email send by jeff dasovich per day
-jeff_stat <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
+jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
   #we count the number of different email subject send per day
   group_by(date, subject) %>% 
   summarise(email_count = n(), .groups = "drop") %>%
@@ -1294,15 +1296,15 @@ sender_stat <- df_message_status %>%
   mutate(source = "Enron's worker") %>% select(-sender) %>% transform(source = as.factor(source))
 
 #count the number of email send by Employee status per day
-statuts_stat <- df_message_status %>% filter(status_sender == "Employee") %>% 
+statuts_stat_send <- df_message_status %>% filter(status_sender == "Employee") %>% 
   #we count the number of different email subject send per day by each sender of status employee
   group_by(date, sender, subject) %>% 
   summarise(email_count = n(), .groups = "drop") %>%
   mutate(source = "Employee status") %>% transform(source = as.factor(source))
 
 #combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
-violin_plot1 <- bind_rows(jeff_stat, statuts_stat)
-violin_plot2 <- bind_rows(jeff_stat, sender_stat)
+violin_plot1 <- bind_rows(jeff_stat_send, statuts_stat_send)
+violin_plot2 <- bind_rows(jeff_stat_send, sender_stat)
 
 #compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee 
 p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
@@ -1373,7 +1375,7 @@ The table who summarise the email send by group show us that:
 Then we look at the email recieved by Jeff Dasovitch compared to Enron's worker of the same status and to all Enron's worker.
 ```{r}
 #statistics on the jeff dasovich email receive per day
-jeff_stat <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
+jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
   group_by(date) %>% 
   summarise(email_count = n(), .groups = "drop") %>%
   mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
@@ -1384,13 +1386,13 @@ recipient_stat <- df_message_status %>% group_by(date, recipient) %>%
   mutate(source = "Enron's worker") %>% select(-recipient) %>% transform(source = as.factor(source))
 
 #statistics on the email send per day by the enron's worker who have an employee statuts
-statuts_stat <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
+statuts_stat_rec <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
   summarise(email_count = n(), .groups = "drop") %>%
   mutate(source = "Employee status") %>% transform(source = as.factor(source))
 
 #combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
-violin_plot1 <- bind_rows(jeff_stat, statuts_stat)
-violin_plot2 <- bind_rows(jeff_stat, recipient_stat)
+violin_plot1 <- bind_rows(jeff_stat_rec, statuts_stat_rec)
+violin_plot2 <- bind_rows(jeff_stat_rec, recipient_stat)
 
 #compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee and/or worker in Enron's company
 p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
@@ -1431,7 +1433,7 @@ p3 + p4
 ```
 
 ```{r}
-violin_plot <- bind_rows(jeff_stat, recipient_stat, statuts_stat)
+violin_plot <- bind_rows(jeff_stat_rec, recipient_stat, statuts_stat_rec)
 
 violin_plot %>% group_by(source) %>%
   summarise(
