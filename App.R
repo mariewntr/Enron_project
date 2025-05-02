@@ -299,6 +299,7 @@ status_email_subject_rec <- status_email_subject_rec %>%
 
 
 #for the analyze of the person imply in the Enron event
+#email send:
 person_of_interest_send <- email_subject_send %>%
   filter(str_detect(sender,"jeff.dasovich|andrew.baker|tim.belden|andrew.fastow|lfastow|vkaminski|jordan.mintz|jeff.skilling|sherron.watkins|richard.causey|greg.whalley")) %>%
   mutate(
@@ -316,9 +317,11 @@ person_of_interest_send <- email_subject_send %>%
       sender == "sherron.watkins@enron.com" ~ "Sherron Watkins",
       sender == "richard.causey@enron.com" ~ "Richard Causey", #chief account officer wikipedia source
       sender == "greg.whalley@enron.com" ~ "Greg Whalley", #president and COO of Enron wholesale service
-      .default = sender)) %>% 
+      .default = sender))
+
+person_of_interest_send_subject <- person_of_interest_send %>%
   #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
-  group_by(year, email_label_sender) %>%
+  group_by(year_month, email_label_sender) %>%
   mutate(#compute the sum for each group
     sum_topic_meeting = sum(topic_meeting),
     sum_topic_business_process = sum(topic_business_process),
@@ -333,7 +336,7 @@ person_of_interest_send <- email_subject_send %>%
     sum_email_correction = sum(email_correction, na.rm = TRUE),
     sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)) %>% ungroup() %>%
   #keep one line per year and month
-  distinct(year, email_label_sender, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business,sum_topic_enron_event,sum_email_mark_to_market,
+  distinct(year_month, email_label_sender, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business,sum_topic_enron_event,sum_email_mark_to_market,
            sum_email_10K_report,
            sum_email_losing_money,
            sum_email_SEC_investigation,
@@ -346,11 +349,16 @@ person_of_interest_send <- email_subject_send %>%
            (sum_email_losing_money!=0)|(sum_email_SEC_investigation!=0)|(sum_email_fear_feeling!=0)|
            (sum_email_correction!=0)|(sum_email_bankruptcy!=0)) 
 
-person_of_interest_send <- person_of_interest_send %>% pivot_longer(
-    cols = 3:length(person_of_interest_send),
-    names_to = "topic_email",
-    values_to = "value")
 
+#pivot the table
+person_of_interest_send_subject <-person_of_interest_send_subject %>%
+  pivot_longer(
+    cols = 3:length(person_of_interest_send_subject),
+    names_to = "topic_email",
+    values_to = "value"
+  )
+
+#email received
 person_of_interest_reciveid <- email_subject_rec %>%
   filter(str_detect(recipient,"jeff.dasovich|andrew.baker|tim.belden|andrew.fastow|lfastow|vkaminski|jordan.mintz|jeff.skilling|sherron.watkins|richard.causey|greg.whalley")) %>%
   mutate(
@@ -365,14 +373,16 @@ person_of_interest_reciveid <- email_subject_rec %>%
         recipient %in% c("lfastow@pop.pdq.net", "lfastow@pdq.net") ~ "Lea Fastow",
         recipient %in% c("andrew.fastow@enron.com", "andrew.fastow@ljminvestments.com") ~ "Andrew Fastow",
         recipient %in% c("vkaminski@enron.com", "vkaminski@aol.com","vkaminski@aol .com", "vkaminski@palm.net",
-                         "vkaminski@ol.com") ~ "Vincent Kaminski",
+                         "vkaminski@aol.com") ~ "Vincent Kaminski",
         recipient %in% c("jordan.mintz@enron.com","jordan_mintz@enron.com") ~ "Jordan Mintz",
         recipient == "sherron.watkins@enron.com" ~ "Sherron Watkins",
         recipient == "richard.causey@enron.com" ~ "Richard Causey", #chief account officer wikipedia source
         recipient == "greg.whalley@enron.com" ~ "Greg Whalley", #president and COO of Enron wholesale service
-        .default = recipient)) %>% 
+        .default = recipient)) 
+
+person_of_interest_reciveid_subject <- person_of_interest_reciveid %>%
   #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
-  group_by(year, email_label_recipient) %>%
+  group_by(year_month, email_label_recipient) %>%
   mutate(#compute the sum for each group
     sum_topic_meeting = sum(topic_meeting),
     sum_topic_business_process = sum(topic_business_process),
@@ -387,7 +397,7 @@ person_of_interest_reciveid <- email_subject_rec %>%
     sum_email_correction = sum(email_correction, na.rm = TRUE),
     sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)) %>% ungroup() %>%
   #keep one line per year and month
-  distinct(year, email_label_recipient, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event, sum_email_mark_to_market,
+  distinct(year_month, email_label_recipient, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event, sum_email_mark_to_market,
            sum_email_10K_report,
            sum_email_losing_money,
            sum_email_SEC_investigation,
@@ -401,12 +411,14 @@ person_of_interest_reciveid <- email_subject_rec %>%
            (sum_email_correction!=0)|(sum_email_bankruptcy!=0))
 
 #pivot the table
-person_of_interest_reciveid <-person_of_interest_reciveid %>%
+person_of_interest_reciveid_subject <-person_of_interest_reciveid_subject %>%
   pivot_longer(
-    cols = 3:length(person_of_interest_reciveid),
+    cols = 3:length(person_of_interest_reciveid_subject),
     names_to = "topic_email",
     values_to = "value"
   )
+
+
 
 #the color and label for the different visualisations
 status_color <- c(
@@ -456,7 +468,8 @@ status_list <- c("Employee", "CEO", "Manager", "Director", "Vice President", "Tr
 enron_worker_rec <- c("Jeff Dasovich", "Jeffrey Skilling", "Timothy Belden","Lea Fastow","Andrew Fastow",
                   "Vincent Kaminski","Jordan Mintz","Sherron Watkins","Richard Causey", "Greg Whalley")
 
-
+#the theme for all the plot
+theme_set(theme_light())
 
 #### front end UI
 
@@ -469,16 +482,36 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(id = "tabs",
       menuItem("General", tabName = "dashboard", icon = icon("dashboard")),
-      menuItem("Email exchange", tabName = "workerExchange", icon = icon("envelope")),
       menuItem("Email content analysis", tabName = "email", icon = icon("file-lines")),
+      menuItem("Email exchange per status", tabName = "workerExchange", icon = icon("envelope")),
       menuItem("Email analyze per status", tabName = "status", icon = icon("business-time")),
       menuItem("The most active Enron worker", tabName = "active", icon = icon("sun")),
       menuItem("Potential fraud actor", tabName = "actor", icon = icon("circle-exclamation"))),
-      #designe the side bar for the status tab
-      conditionalPanel(
-        #date range slicer
+    
+    #design the side bar for the email tab
+    conditionalPanel(
+      condition = "input.tabs == 'email'",
+      dateRangeInput("date_range",
+                     label = "Select the period: ",
+                     start = min(email_subject_send$year_month),
+                     end = max(email_subject_send$year_month),
+                     format = "yyyy-mm",
+                     startview = "year"),
+    selectizeInput(
+      "topic_choice", "Select subject topic:",
+      choices = topic_label[8:11],
+      selected = topic_label[8:11],
+      multiple = TRUE),
+    selectizeInput(
+      "subject_choice", "Select subject topic:",
+      choices = topic_label[1:7],
+      selected = topic_label[1:7],
+      multiple = TRUE)),
+    
+      conditionalPanel(#sidebar for the status tab
         condition = "input.tabs == 'status'",
-        dateRangeInput("date_range",
+        #date range slicer
+        dateRangeInput("date_range_status",
                        label = "Select the period: ",
                        start = min(email_subject_send$year_month),
                        end = max(email_subject_send$year_month),
@@ -486,17 +519,42 @@ ui <- dashboardPage(
                        startview = "year"),
         #status selector
         selectizeInput(
-          "status_choice", "Select status:",
+          "status_choice_status", "Select status:",
           choices = unique(status_email_subject_send$status_sender),
           selected = NULL),
       #topic selector
       selectizeInput(
-        "subject_choice", "Select subject topic:",
+        "subject_choice_status", "Select subject topic:",
         choices = topic_label,
         selected = topic_label,
         multiple = TRUE)
-      )
-    ),
+      ),
+    conditionalPanel(#sidebar for the actor tab
+      condition = "input.tabs == 'actor'",
+      #date range slicer
+      dateRangeInput("date_range_actor",
+                     label = "Select the period: ",
+                     start = min(person_of_interest_send_subject$year_month),
+                     end = max(person_of_interest_send_subject$year_month),
+                     format = "yyyy-mm",
+                     startview = "year"),
+      #actor selector for send
+      selectizeInput(
+        "worker_choice_send", "Select status sender:",
+        choices = unique(person_of_interest_send_subject$email_label_sender),
+        selected = NULL),
+      #actor selector for received
+      selectizeInput(
+        "worker_choice_rec", "Select status recipient:",
+        choices = unique(person_of_interest_reciveid_subject$email_label_recipient),
+        selected = NULL),
+      #topic selector
+      selectizeInput(
+        "subject_choice_actor", "Select subject topic:",
+        choices = topic_label,
+        selected = topic_label,
+        multiple = TRUE)
+    )),
   
   #the body of the dashboard
   dashboardBody(
@@ -506,7 +564,6 @@ ui <- dashboardPage(
         #name of the tab
         tabName = "dashboard",
               #the title for it
-              h4("General information about the company"),
         fluidRow(
           column(width = 9,
                  switchInput(inputId = "show_na", value = FALSE, label = "show NA"),
@@ -516,13 +573,12 @@ ui <- dashboardPage(
                 width = 9,
                 selectInput("year", "Select years:", 
                                        choices = sort(unique(df_message_status$year)),
-                                       selected = unique(df_message_status$year)[1],
+                                       selected = unique(df_message_status$year),
                                        multiple = TRUE),
                            plotOutput("nbEmail")))),
       
       #2nd tab content
       tabItem(tabName = "workerExchange",
-              h4("Study of the email exchange between Enron's worker"),
               fluidRow(
               tabBox(width = 6,
                 title = "Email send and received visualization",
@@ -545,7 +601,6 @@ ui <- dashboardPage(
       
       # 3rd tab content
       tabItem(tabName = "active",
-              h4("The most active email sender of the Enron company, Jeff Dasovich"),
               fluidRow(
                 tabBox(width = 12,
                   id = "tab3",
@@ -565,39 +620,28 @@ ui <- dashboardPage(
                            column(width = 4, tableOutput("JeffRecStat")))))
               )),
       
-      # 4th tab content
+      #4th tab content
       tabItem(tabName = "email",
-              h4 ("Analyse of the email subject and content about the Enron event and the core business"),
-              fluidRow(
-                column(12,
-                       #this will apply to the both plot
-                       dateRangeInput("date_range",
-                                      label = "Select the period: ",
-                                      start = min(email_subject_send$year_month),
-                                      end = max(email_subject_send$year_month),
-                                      format = "yyyy-mm",
-                                      startview = "year")),
-                
-                fluidRow(column(width = 6, 
-                                selectizeInput(
-                                  "topic_choice", "Select subject topic:",
-                                  choices = topic_label[8:11],
-                                  selected = topic_label[8:11],
-                                  multiple = TRUE),
-                                plotOutput("EmailSubject")),
-                         
-                         column(width = 6, 
-                                selectizeInput(
-                                  "subject_choice", "Select subject topic:",
-                                  choices = topic_label[1:7],
-                                  selected = topic_label[1:7],
-                                  multiple = TRUE),
-                                plotOutput("EmailContent"))))),
+              fluidRow(tabBox(width = 12,
+                tabPanel("Send",plotOutput("EmailSend")),
+                tabPanel("Received",plotOutput("Emailrec"))
+                )),
+                fluidRow(tabBox(width = 12,
+                  tabPanel("Send",
+                           fluidRow(column(width = 6,
+                                           plotOutput("EmailSubjectSend")),
+                                    column(width = 6,
+                                           plotOutput("EmailContentSend")))),
+                  tabPanel("Received",
+                           fluidRow(column(width = 6,
+                                           plotOutput("EmailSubjectRec")),
+                                    column(width = 6,
+                                           plotOutput("EmailContentRec"))))))
+              ),
+      
       
       # 5th tab content
       tabItem(tabName = "status",
-              h4("Study of the Enron worker status email send/received and their subject/content."),
-              
               fluidRow(
                 tabBox(width = 12,
                        id = "tab5",
@@ -617,24 +661,21 @@ ui <- dashboardPage(
       
       # 6th tab content
       tabItem(tabName = "actor",
-              h4("Email send/received by Enron worker knows for being involved in the fiscal fraud and/or the bankruptcy"),
-                fluidRow(box(title = "Email send",
-                         selectizeInput(
-                           "sender_choice", "Select the worker:",
-                           choices = unique(person_of_interest_send$email_label_sender),
-                           selected = NULL),
-                         plotOutput("EnronWorkerSend")
+                fluidRow(
+                  box(title = "Number of email send",
+                            plotOutput("EnronWorkerSend")
                          ),
-                         box(title = "Email received",
-                         selectizeInput(
-                           "rec_choice", "Select the worker:",
-                           choices = enron_worker_rec,
-                           selected = NULL),
-                         plotOutput("EnronWorkerRec")
-                         ))
-                  
-                  )))
-    )
+                         box(title = "Number of email received",
+                             plotOutput("EnronWorkerRec")
+                         )),
+              fluidRow(
+                box(title = "Number of email send about Enron's event",
+                    plotOutput("EnronWorkerSubjectSend")
+                ),
+                box(title = "Number of email received about Enron's event",
+                    plotOutput("EnronWorkerSubjectRec")
+              ))
+    ))))
     
   
 
@@ -974,27 +1015,38 @@ server <- function(input, output){
   
   #email subject and content analysis
   
-  email_subject_filtered <- reactive({
-    
-    #verify the element exist
-    req(input$date_range)
-    
-    email_subject_filtered <- email_subject_send %>% filter(
-      year_month >= input$date_range[1], #for year_month is greater than the min date in the range
-      year_month <= input$date_range[2]) #for year_month is smaller than the min date in the range
+  output$EmailSend <- renderPlot({
+    email_subject_send %>% group_by(year_month) %>% mutate(nb_email_send = n()) %>% ungroup()%>%
+      ggplot(aes(year_month, nb_email_send)) +
+      geom_line(size = 1)+
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(title = "Number email send by all the Enron worker",
+           y = "Email number")
   })
   
-  
-  output$EmailSubject <- renderPlot({
+  output$Emailrec <- renderPlot({
+    email_subject_rec %>% group_by(year_month) %>% mutate(nb_email_rec = n()) %>% ungroup()%>%
+      ggplot(aes(year_month, nb_email_rec)) +
+      geom_line(size = 1)+
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(title = "Number email received by all the Enron worker",
+           y = "Email number")
     
-    email_subject_filtered() %>% group_by(year_month) %>%
+  })
+  
+  output$EmailSubjectSend <- renderPlot({
+
+    email_subject_send %>% filter(
+      year_month >= input$date_range[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range[2]) %>% 
+      group_by(year_month) %>%
       mutate(
         sum_topic_meeting = sum(topic_meeting),
         sum_topic_business_process = sum(topic_business_process),
         sum_topic_core_business = sum(topic_core_business),
         sum_topic_enron_event = sum(topic_enron_event)) %>% ungroup() %>%
       #keep one line per year and month
-      distinct(year_month, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event) %>% 
+      distinct(year_month, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event) %>%
       #change the orientation of the data set
       pivot_longer(
         cols = 2:5,
@@ -1005,7 +1057,7 @@ server <- function(input, output){
       ggplot(aes(year_month,value, color=topics))+
       geom_line(size = 1)+
       #label, axis, and legend
-      labs(color = "Email subject topics",
+      labs(color = "Email topics",
            title = "Email topics in function of the year",
            x = "year",
            y = "Number of email per topics") +
@@ -1014,12 +1066,14 @@ server <- function(input, output){
       scale_color_manual(#to get only the customization for the email categories
         values = topic_colors[8:11],
         labels = topic_label[8:11])
-        
+
   })
-  output$EmailContent <- renderPlot({
+  output$EmailContentSend <- renderPlot({
     
     
-    email_subject_filtered() %>% group_by(year_month) %>%
+    email_subject_send %>% filter(
+      year_month >= input$date_range[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range[2]) %>% group_by(year_month) %>%
       mutate(
         sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
         sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
@@ -1041,7 +1095,79 @@ server <- function(input, output){
       ggplot(aes(year_month,value, color=email))+
       geom_line(size = 1)+
       #label, axis, and legend
-      labs(color = "Email content key words",
+      labs(color = "Email key words",
+           title = "Email key word about the Enron event in function of the year",
+           x = "year",
+           y = "Number of email per key words") +
+      #to display the year and month, every 3 months for a better reading
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      scale_color_manual(#to get only the customization for the email categories
+        values = topic_colors[1:7],
+        labels = topic_label[1:7])
+    
+  })
+  
+  output$EmailSubjectRec <- renderPlot({
+    
+    email_subject_rec %>% filter(
+      year_month >= input$date_range[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range[2])%>% group_by(year_month) %>%
+      mutate(
+        sum_topic_meeting = sum(topic_meeting),
+        sum_topic_business_process = sum(topic_business_process),
+        sum_topic_core_business = sum(topic_core_business),
+        sum_topic_enron_event = sum(topic_enron_event)) %>% ungroup() %>%
+      #keep one line per year and month
+      distinct(year_month, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event) %>% 
+      #change the orientation of the data set
+      pivot_longer(
+        cols = 2:5,
+        names_to = "topics",
+        values_to = "value") %>%
+      filter(topics %in% names(topic_label[topic_label %in% input$topic_choice])) %>%
+      #scatter plot and trend line
+      ggplot(aes(year_month,value, color=topics))+
+      geom_line(size = 1)+
+      #label, axis, and legend
+      labs(color = "Email topics",
+           title = "Email topics in function of the year",
+           x = "year",
+           y = "Number of email per topics") +
+      #to display the year and month, every 3 months for a better reading
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      scale_color_manual(#to get only the customization for the email categories
+        values = topic_colors[8:11],
+        labels = topic_label[8:11])
+    
+  })
+  
+  output$EmailContentRec <- renderPlot({
+    
+    email_subject_rec %>% filter(
+      year_month >= input$date_range[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range[2])%>% group_by(year_month) %>%
+      mutate(
+        sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
+        sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
+        sum_email_losing_money = sum(email_losing_money, na.rm = TRUE),
+        sum_email_SEC_investigation = sum(email_SEC_investigation, na.rm = TRUE),
+        sum_email_fear_feeling = sum(email_fear_feeling, na.rm = TRUE),
+        sum_email_correction = sum(email_correction, na.rm = TRUE),
+        sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)
+      ) %>% ungroup() %>%
+      #keep one line per year and month
+      distinct(year_month, sum_email_mark_to_market, sum_email_10K_report, sum_email_losing_money, sum_email_SEC_investigation, sum_email_fear_feeling,
+               sum_email_correction, sum_email_bankruptcy) %>% 
+      pivot_longer(
+        cols = 2:8,
+        names_to = "email",
+        values_to = "value") %>%
+      filter(email %in% names(topic_label[topic_label %in% input$subject_choice])) %>%
+      #scatter plot and trend line
+      ggplot(aes(year_month,value, color=email))+
+      geom_line(size = 1)+
+      #label, axis, and legend
+      labs(color = "Email key words",
            title = "Email key word about the Enron event in function of the year",
            x = "year",
            y = "Number of email per key words") +
@@ -1057,13 +1183,13 @@ server <- function(input, output){
   
   output$nbEmailSendStatus <- renderPlot({
     
-    df_message_status %>% filter(status_sender == input$status_choice) %>% 
+    df_message_status %>% filter(status_sender == input$status_choice_status) %>% 
       group_by(year,month)%>%
       count() %>% 
       ggplot(aes(month, n, fill = month))+
       geom_bar(stat = "identity") +
       facet_grid(~year)+
-      labs(title = paste("Email send per month for each year by the", input$status_choice),
+      labs(title = paste("Email send per month for each year by the", input$status_choice_status),
            y = "Email count per month")+
       scale_fill_manual(
         values = month_color,
@@ -1078,13 +1204,13 @@ server <- function(input, output){
              
   output$nbEmailRecStatus <- renderPlot({
     
-    df_message_status %>% filter(status_recipient == input$status_choice) %>% 
+    df_message_status %>% filter(status_recipient == input$status_choice_status) %>% 
       group_by(year,month)%>%
       count() %>% 
       ggplot(aes(month, n, fill = month))+
       geom_bar(stat = "identity") +
       facet_grid(~year)+
-      labs(title = paste("Email received per month for each year by the", input$status_choice),
+      labs(title = paste("Email received per month for each year by the", input$status_choice_status),
            y = "Email count per month")+
       scale_fill_manual(
         values = month_color,
@@ -1102,16 +1228,16 @@ server <- function(input, output){
     
    status_email_subject_send %>% 
       filter(
-        year_month >= input$date_range[1], #for year_month is greater than the min date in the range
-        year_month <= input$date_range[2], #for year_month is smaller than the min date in the range
-    status_sender == input$status_choice, #for selecting the status
-    topic_email %in% names(topic_label[topic_label %in% input$subject_choice]) #for selecting the topics
+        year_month >= input$date_range_status[1], #for year_month is greater than the min date in the range
+        year_month <= input$date_range_status[2], #for year_month is smaller than the min date in the range
+    status_sender == input$status_choice_status, #for selecting the status
+    topic_email %in% names(topic_label[topic_label %in% input$subject_choice_status]) #for selecting the topics
     )%>% 
       ggplot(aes(year_month,value, color = topic_email))+
       geom_line(size = 1) +
       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+    
-      labs(fill = "Email key words and topics",
-           title = paste("Email send by", input$status_choice, ", content and subject analyze"),
+      labs(color = "Email key words and topics",
+           title = paste("Email send by", input$status_choice_status, ", content and subject analyze"),
            y = "Email count")+
       scale_color_manual(values = topic_colors,
                          labels = topic_label)+
@@ -1122,16 +1248,16 @@ server <- function(input, output){
     
     status_email_subject_rec %>% 
       filter(
-        year_month >= input$date_range[1], #for year_month is greater than the min date in the range
-        year_month <= input$date_range[2], #for year_month is smaller than the min date in the range
-        status_recipient == input$status_choice, #for selecting the status
-        topic_email %in% names(topic_label[topic_label %in% input$subject_choice]) #for selecting the topics
+        year_month >= input$date_range_status[1], #for year_month is greater than the min date in the range
+        year_month <= input$date_range_status[2], #for year_month is smaller than the min date in the range
+        status_recipient == input$status_choice_status, #for selecting the status
+        topic_email %in% names(topic_label[topic_label %in% input$subject_choice_status]) #for selecting the topics
       )%>% 
       ggplot(aes(year_month,value, color = topic_email))+
       geom_line(size = 1) +
       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+    
-      labs(fill = "Email key words and topics",
-           title = paste("Email received by", input$status_choice, ", content and subject analyze"),
+      labs(color = "Email key words and topics",
+           title = paste("Email received by", input$status_choice_status, ", content and subject analyze"),
            y = "Email count")+
       scale_color_manual(values = topic_colors,
                          labels = topic_label)+
@@ -1144,37 +1270,79 @@ server <- function(input, output){
   #analyze the content and subject of email for specific enron worker
   output$EnronWorkerSend <- renderPlot({
     
-    person_of_interest_send %>% filter(email_label_sender == input$sender_choice) %>% 
-      ggplot(aes(topic_email,value, fill = topic_email))+
+    person_of_interest_send %>% filter(email_label_sender == input$worker_choice_send) %>%
+      group_by(year,month) %>%
+      count() %>% ggplot(aes(month, n, fill = month))+
       geom_bar(stat = "identity") +
       facet_grid(~year)+
-      labs(fill = "Email topics",
-           title = paste("Email topics send by", input$sender_choice),
-           y = "Email count per subject topics")+
-      scale_fill_manual(values = topic_colors,
-                        labels = topic_label)+
-      theme(legend.text.position = "bottom",
-            axis.title.x = element_blank(),
+      labs(title = input$worker_choice_send,
+           y = "Email count per month")+
+      scale_fill_manual(
+        values = month_color,
+        labels = month_label)+
+      theme(legend.position = "bottom",
             axis.text.x = element_blank(),
-            axis.ticks.x = element_blank())
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank())
     
   })
   
   output$EnronWorkerRec <- renderPlot({
     
-    person_of_interest_reciveid %>% filter(email_label_recipient == input$rec_choice)%>% 
-      ggplot(aes(topic_email,value, fill = topic_email))+
+    person_of_interest_reciveid %>% filter(email_label_recipient == input$worker_choice_rec)%>% 
+      group_by(year,month) %>%
+      count() %>% ggplot(aes(month, n, fill = month))+
       geom_bar(stat = "identity") +
       facet_grid(~year)+
-      labs(fill = "Email content key words and topics",
-           title = paste("Email topics received by", input$rec_choice),
-           y = "Email count per category research")+
-      scale_fill_manual(values = topic_colors,
-                        labels = topic_label)+
-      theme(legend.text.position = "bottom",
-            axis.title.x = element_blank(),
+      labs(title = input$worker_choice_rec,
+           y = "Email count per month")+
+      scale_fill_manual(
+        values = month_color,
+        labels = month_label)+
+      theme(legend.position = "bottom",
             axis.text.x = element_blank(),
-            axis.ticks.x = element_blank())
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank())
+    
+  })
+  
+  output$EnronWorkerSubjectSend <- renderPlot({
+    
+    person_of_interest_send_subject %>% filter(
+      year_month >= input$date_range_actor[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range_actor[2], #for year_month is smaller than the min date in the range
+      email_label_sender == input$worker_choice_send,
+      topic_email %in% names(topic_label[topic_label %in% input$subject_choice_actor]) #for selecting the topics
+      ) %>% 
+      ggplot(aes(year_month,value, color = topic_email))+
+      geom_line(size = 1) +
+      labs(color = "Email topics",
+           title = input$worker_choice_send,
+           y = "Email count per subject topics")+
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+ 
+      scale_color_manual(values = topic_colors,
+                         labels = topic_label)+
+      theme(legend.text.position = "bottom")
+    
+  })
+  
+  output$EnronWorkerSubjectRec <- renderPlot({
+    
+    person_of_interest_reciveid_subject %>% filter(
+      year_month >= input$date_range_actor[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range_actor[2], #for year_month is smaller than the min date in the range
+      email_label_recipient == input$worker_choice_rec,
+      topic_email %in% names(topic_label[topic_label %in% input$subject_choice_actor]) #for selecting the topics
+      )%>% 
+      ggplot(aes(year_month,value, color = topic_email))+
+      geom_line(size = 1) +
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(color = "Email content key words and topics",
+           title = input$worker_choice_rec,
+           y = "Email count per category research")+
+      scale_color_manual(values = topic_colors,
+                         labels = topic_label)+
+      theme(legend.text.position = "bottom")
     
   })
   
