@@ -590,10 +590,67 @@ rm(employeelist, message, message_2, recipientinfo, recipientinfo_2, referencein
 theme_set(theme_light())
 ```
 
+We start to make a global picture of the cleaned data we have. 
+```{r}
+Emailcount <- count(df_message_status %>% filter(rtype == "TO") %>% distinct(sender, recipient, subject, reference))
+```
+
+```{r}
+Reply <- count(df_message_status %>% filter(str_detect(subject, "^RE:")) %>% distinct(sender, recipient, subject, reference))
+```
+
+```{r}
+emailExchangeStatus <- count(df_message_status %>% distinct(sender, status_sender, recipient, status_recipient, subject, reference) %>% filter(!is.na(status_sender)|!is.na(status_recipient)))
+```
+
+
+In this data set we have `r count(df_message_status %>% distinct(sender))` sender and `r count(df_message_status %>% distinct(recipient))` recipient. The high difference between the number of sender and recipient suggest that an email involved several person. 
+We have `r Emailcount` different direct email exchange where `r paste(round((Reply/Emailcount)*100,2), "%")` are reply to former email. This suggest that, most of the email are information send or received. Few are real exchange between worker, maybe at this time the worker communicate through other way such as the telephone. Moreover, among the total email exchange only for `r paste(round((emailExchangeStatus/Emailcount)*100,2), "%")` we know the status of the sender or the recipient in Enron suggested it has a lot of email which come from external source and/or worker with unidentified status. Is also possible some email are address to email list which group several employee in the company. For those we can't know the status of the worker. 
+
+```{r}
+enronEmailAdd <- count(df_message_status %>% filter((str_detect(sender,"@enron")) | (str_detect(recipient,"@enron"))) %>% distinct(sender, recipient))
+```
+
+```{r}
+Estimation_generalEmailAdd <- count(df_message_status %>% 
+                                      #key word regularly used for general email name and see in the sender or recipient variable
+                                      filter(str_detect(sender,                                                                     "^enron|^press|^office|^all|^announcement|^communications|affair|client|contact|secur|team|comit|^west|energy") | str_detect(recipient, "^enron|^press|^office|^all|^announcement|^communications|affair|client|contact|secur|team|comit|^west|energy")))
+```
+
+
+```{r}
+Exchange_ext_enron <- count(
+  #extract the variable we need
+  df_message_status %>% select(date, sender, recipient, subject, reference) %>% 
+    #count for each the sender and recipient whose have an enron email address
+    mutate(count_sender = if_else(str_detect(sender, "@enron"), 1, 0),
+  count_recipient = if_else(str_detect(recipient, "@enron"), 1,0)) %>% 
+    #for each date and subject for each date make the sum of the sender and recipient with an enron email address
+    group_by(date, subject) %>% mutate(
+      sum_sender = sum(count_sender),
+      sum_recipient = sum(count_recipient)) %>% ungroup() %>%
+    #isolate the email exchange which not involved person with an enron email address
+    filter((sum_sender ==0) & (sum_recipient == 0)))
+```
+
+In our data set we have `r enronEmailAdd` which are email send by or/and address to an Enron email address. In fact the Enron company possess a lot of branches which has their on email domain this could be the reason why we only have average 30% of the email address in those email exchange are with an Enron email domain. We can also estimate in those exchange average `r Estimation_generalEmailAdd` are email send or address to a general email address which cover several different worker at Enron or in one of it's branch. We observed that, `r Exchange_ext_enron` are email send and address to person without Enron domain in their email address. Those exchange represent average 1% of the total email in the data set.
+
+With this first picture of the data we can deduce that:
+
+- The data set we have isn't exhaustive for the status of employee in the company as well as the content of the email.
+
+- A lot of exchange is done with external worker. Perhaps, most of the exchange involved enron worker where less than 10% are email send and address to email address which aren't with an Enron domain. 
+
+- It seems, few email are real exchange between employee where we have few email containing "RE:" in their subject.
+
+- A few part of the email exchange seems to be between person whose are extern from the enron company. The part they represent in the total data set is neglated, we will keep them in the data set to pursue the analysis. 
+
+With this we decide to make the analysis in taking in account the worker without status to don't loose any information about the email exchange as well as to keep the external email address.
+
 
 #### the employee liste 
 
-To explore the number employee per different statuts we have, we used the employeelist2 data frame. 
+To explore the number employee per different status we have, we used the employeelist2 data frame. 
 
 Number of employee per status :
 ```{r}
@@ -1466,9 +1523,24 @@ When we look at the number of email received, Jeff Dasovich received significant
 
 ### Analyze of the email subject and content
 
-In our data set the number of email exchange for which we have `r length(!is.na(df_message_status$reference))` rows with content which represent `r paste0((length(!is.na(df_message_status$reference))/length(row(df_message_status)))*100,"%")`. This make the email content few exhaustive compared to the email subject which is describe for every email exchange. For this reason we will in first look at the subject which match with the pattern research and then look at the key words in the email content.
+In our data set we have `r length(!is.na(df_message_status$reference))` rows with email content which represent `r paste0((length(!is.na(df_message_status$reference))/length(row(df_message_status)))*100,"%")`. This make the email content is few exhaustive compared to the email subject which is describe for every email exchange. 
 
-We create 4 list which are related of 4 different topics which will be research in the email subject:
+```{r}
+String_var_stat <- df_message_status %>% distinct(reference, subject) %>% mutate(
+  emailTextLength = str_length(reference),
+  emailSubjectLength = str_length(subject)) 
+
+summary(String_var_stat)
+```
+
+When we look at the distinct subject and reference we can see that :
+ 
+ - In average an email text contain 1 759 characters and 75% of the email's text have less or are equal to 2040 characters suggested the content of the email are short exchange about focusing subject.
+ 
+ - In average the email subject is 30 characters with 75% of the email's subject have no more than 40 characters. 
+ 
+
+To investigate the subject and text of the email we have, we create 4 list of different topics which will be researched in the email subject:
 
   * email related to meeting by looking to words such as message, please, email, inform. 
 
@@ -1476,11 +1548,8 @@ We create 4 list which are related of 4 different topics which will be research 
 
   * email related to the core business of Enron like gas, power, trade.
 
-From the Enron's scandal wikipedia page we take some words which we expect ot find in the email content we have. Those word are related with the enron event.
 
-source: [wikipedia page about Enron timeline downfall](https://en.wikipedia.org/wiki/Enron_scandal#Timeline_of_downfall).
-
-We research:
+In the email text we will focus on specific key words which are related to the events:
 
   * mark-to-market which is related to the way they process to do the fiscal fraud
   
@@ -1495,6 +1564,8 @@ We research:
   * correction since October 2001, the enron company start a process of correction on their revenue. We research this word in the email content and the subject.
   
   * bankruptcy to see from which date they start to speak of it.
+
+This key words come from the wikipedia page about the Enron's event [wikipedia page about Enron timeline downfall](https://en.wikipedia.org/wiki/Enron_scandal#Timeline_of_downfall). 
 
 Each word/concept will be research individually in the email content to follow the email exchange whose contain them as well as the Enron's worker status imply in those exchange. 
 
@@ -2390,8 +2461,162 @@ We can observed that:
 - Timothy Belden received an important amount of email about the business process especially from October 2001 and January 2002 suggesting it is inform about them at this period. Maybe this related to his position at the head of trader and the period of the SEC investigation. We distinct similar pick for Richard Causey and Vincent Kaminski suggested they are imply in the loop of this process. 
 
 
+#### The external exchange
+
+When we start to explore the data set we pointed that, it as average 1% of the email exchange where the sender and the receiver haven't a Enron email address. Potential those person are external to the company and could speak about the event. We can imagine that, external person involved in internal email exchange could speak about what does the Enron worker in the company with external person. In this part we will explore this hypothesis.
+
+```{r}
+#extraction of the email exchange whose not involved the enron worker
+extern_email <- df_message_status %>% select(date, sender, recipient, subject, reference) %>% 
+    #count for each the sender and recipient whose have an enron email address
+    mutate(count_sender = if_else(str_detect(sender, "@enron"), 1, 0),
+  count_recipient = if_else(str_detect(recipient, "@enron"), 1,0)) %>% 
+    #for each date and subject for each date make the sum of the sender and recipient with an enron email address
+    group_by(date, subject) %>% mutate(
+      sum_sender = sum(count_sender),
+      sum_recipient = sum(count_recipient)) %>% ungroup() %>%
+    #isolate the email exchange which not involved person with an enron email address
+    filter((sum_sender ==0) & (sum_recipient == 0)) %>% select(-c(count_sender, count_recipient, sum_sender, sum_recipient)) %>%
+  #transform all the string variable into factor data type
+  transform(sender = as.factor(sender),
+            recipient = as.factor(recipient))
+```
+
+```{r}
+summary(extern_email)
+```
+By looking at the data summary we can see that:
+
+- those email seems to be send mostly in 2001 because the median is 2001-05-10 and the 3rd quantile is 2001-10-26.
+
+- the email address for the sender who appear the most is with a domain of the berkley university. For the recipient we don't know the email address of the top receiver.
+
+- on the top subject we can see that 2 of them speak about enron. 
+
+This let us think we could investigate more in this email exchange to see if they speak to the Enron event. For that we use the same topic and key word as in the main table. 
+
+```{r}
+extern_email_graph <- extern_email %>% distinct(date, sender, recipient, subject, reference) %>% 
+  #filter for the email having in their subject enron
+  filter(str_detect(subject, "enron|Enron") | str_detect(reference, "enron|Enron")) %>%
+  mutate(#count the number of email which contain at least one word in the list of each topic
+    topic_meeting = if_else(str_detect(subject, topic_meeting), 1, 0),
+    topic_business_process = if_else(str_detect(subject, topic_business_process), 1, 0),
+    topic_core_business = if_else(str_detect(subject, topic_core_business), 1, 0),
+    topic_enron_event = if_else(str_detect(subject, topic_enron_event), 1, 0),
+    email_mark_to_market = if_else(str_detect(reference,"mark-to-market"), 1, 0),
+    email_10K_report = if_else(str_detect(reference, "10-K"), 1, 0),
+    email_losing_money = if_else(str_detect(reference, "losing money"), 1, 0),
+    email_SEC_investigation = if_else(str_detect(reference, "SEC"), 1, 0),
+    email_fear_feeling = if_else(str_detect(reference, "fears"), 1, 0),
+    email_correction = if_else(str_detect(reference,"correction"),1,0),
+    email_bankruptcy = if_else(str_detect(reference, "bankruptcy"), 1, 0),
+    #to get the date in year/month
+    year_month = as.Date(paste0(format(date,"%Y"),"-",format(date,"%m"),"-01"))) %>%
+  group_by(year_month) %>%
+  mutate(sum_topic_meeting = sum(topic_meeting),
+    sum_topic_business_process = sum(topic_business_process),
+    sum_topic_core_business = sum(topic_core_business),
+    sum_topic_enron_event = sum(topic_enron_event),
+    #for the email we use na.rm = TRUE to allow the sum to be done
+    sum_email_mark_to_market = sum(email_mark_to_market, na.rm = TRUE),
+    sum_email_10K_report = sum(email_10K_report, na.rm = TRUE),
+    sum_email_losing_money = sum(email_losing_money, na.rm = TRUE),
+    sum_email_SEC_investigation = sum(email_SEC_investigation, na.rm = TRUE),
+    sum_email_fear_feeling = sum(email_fear_feeling, na.rm = TRUE),
+    sum_email_correction = sum(email_correction, na.rm = TRUE),
+    sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)) %>% ungroup() %>%
+  #keep one line per year and month
+  distinct(year_month, subject, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event, sum_email_mark_to_market,
+    sum_email_10K_report,
+    sum_email_losing_money,
+    sum_email_SEC_investigation,
+    sum_email_fear_feeling,
+    sum_email_correction,
+    sum_email_bankruptcy) 
+
+#graph of the email speaking about enron and which could be speaking about enron event/business process  
+extern_email_graph %>% select(year_month, starts_with("sum_topic_")) %>%
+  #change the orientation of the data set
+  pivot_longer(
+  cols = 2:5,
+  names_to = "topics",
+  values_to = "value") %>%
+  #scatter plot and trend line
+  ggplot(aes(year_month,value, color=topics))+
+  geom_line(size = 1)+
+  #label, axis, and legend
+  labs(color = "Email subject topics",
+    title = "Email send/received subject about enron event",
+    subtitle = "Email exchange about Enron between person whose haven't an enron email address",
+       x = "year",
+       y = "Number of email") +
+  #to display the year and month, every 3 months for a better reading
+  scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+  scale_color_manual(#to get only the customization for the email categories
+    values = topic_colors[8:11],
+    labels = topic_label[8:11])
+```
+
+```{r}
+#graph of the email speaking about enron and which could be speaking about enron event/business process  
+extern_email_graph %>% select(year_month, starts_with("sum_email_")) %>%
+  #change the orientation of the data set
+  pivot_longer(
+  cols = 2:5,
+  names_to = "topics",
+  values_to = "value") %>%
+  #scatter plot and trend line
+  ggplot(aes(year_month,value, color=topics))+
+  geom_line(size = 1)+
+  #label, axis, and legend
+  labs(color = "Email key words",
+    title = "Email send/received content analysis about enron event",
+    subtitle = "Email exchange about Enron between person whose haven't an enron email address",
+       x = "year",
+       y = "Number of email") +
+  #to display the year and month, every 3 months for a better reading
+  scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+  scale_color_manual(#to get only the customization for the email categories
+    values = topic_colors[1:7],
+    labels = topic_label[1:7])
+```
+
+The graph above show us that, some email between person without enron email address exchange about the Ernon event especially their business process, less speak about the core business of the company. Those email are mostly send between october 2001 and January 2002 which is the period of the Enron fraud investigation by the SEC. Inside the email content we don't find the key words related to those events. 
+
+```{r}
+#isolate the subject about enron and their event
+Enron_subject <- extern_email_graph %>% 
+  select(year_month, subject,starts_with("sum_topic_")) %>% 
+  filter(str_detect(subject, "enron|Enron")) %>%
+  filter((sum_topic_meeting != 0) | (sum_topic_business_process != 0) | (sum_topic_core_business != 0) | (sum_topic_enron_event != 0)) %>% distinct(year_month, subject, .keep_all = TRUE)
+
+#drop the line whose seems to be extern exchange
+no_extern <- df_message_status %>% select(date, sender, recipient, subject, reference) %>% 
+    #count for each the sender and recipient whose have an enron email address
+    mutate(count_sender = if_else(str_detect(sender, "@enron"), 1, 0),
+  count_recipient = if_else(str_detect(recipient, "@enron"), 1,0)) %>% 
+    #for each date and subject for each date make the sum of the sender and recipient with an enron email address
+    group_by(date, subject) %>% mutate(
+      sum_sender = sum(count_sender),
+      sum_recipient = sum(count_recipient)) %>% ungroup() %>%
+    #isolate the email exchange which not involved person with an enron email address
+    filter((sum_sender !=0) | (sum_recipient != 0)) %>% select(-c(count_sender, count_recipient, sum_sender, sum_recipient)) %>%
+  #transform all the string variable into factor data type
+  transform(sender = as.factor(sender),
+            recipient = as.factor(recipient))
+
+#inner joint with the main table to see if we can find those subject in exchange between enron employee
+verify <- inner_join(no_extern, Enron_subject, by = "subject")
+verify
+```
+  
+We can see that 2 subject are find in the external and the data set which look only at the exchange involving person with an enron email address. Those email are send in december 2001 and January 2002, one is from the CEO david foster and is about enron online document, the second is from a louise at enron and is related to an article about the bankruptcy at enron. We can think that, those email had involved person whose are external too the enron company and have spread those information outside the company.
+
+
 **To conclud on the project, we can say that:**
 **The Enron company is compose of different status which seems to have a different degree of involvement in the fiscal fraud. The person at the head of the company as well as the trader and the lawyer seems to be actor of the fraud. The other status seems to be more aware of it with maybe not playing a high role in it.**
 **By looking at the person which are know to be involve in the Enron fiscal fraud we don't identify many email send or received about it as well as the management of the bankruptcy or the SEC investigation. We can think they used other way for communicate. For the time we could thing they comunicate more by phone than email.**
+**A brief investigation about potential external exchange show us that, other company in the US speak about the enron event and 2 email are directly associate with company intern exchange.**
 **It could be interesting to more investigate the email content by having a dataset more exhaustive about them. This will enhance the knowledge an the enron's event as well as the implication of the different status in them.**
 

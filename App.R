@@ -563,11 +563,14 @@ ui <- dashboardPage(
       tabItem(
         #name of the tab
         tabName = "dashboard",
-              #the title for it
+        
+        fluidRow(valueBoxOutput("NbSend"),valueBoxOutput("NbRec")),
         fluidRow(
           column(width = 9,
                  switchInput(inputId = "show_na", value = FALSE, label = "show NA"),
                  plotOutput("NbWorker"))),
+      br(),
+      fluidRow(valueBoxOutput("TotalEmail"),valueBoxOutput("NbReply")),
       br(),
               fluidRow(column(
                 width = 9,
@@ -710,13 +713,14 @@ server <- function(input, output){
       theme(legend.position = "none")
   })
   
-  #allow choose the year we want to display int the plot
+  #allow choose the year we want to display int the plot, this will change only when we play with the filter
   filtered_year <- reactive({
     df_message_status %>%filter(year %in% input$year)
   })
   
   output$nbEmail <- renderPlot({
     
+    #here we use the object filtered_year() not a data set
     data <- filtered_year() %>% group_by(year,month) %>%
       summarise(n= n(), .groups = "drop")
   
@@ -729,6 +733,42 @@ server <- function(input, output){
            y = "Email count per month")+
       scale_fill_brewer(palette = "Set3")
   })
+  
+  output$NbSend <- renderValueBox({
+    
+    nbSender <- count(df_message_status %>% distinct(sender))
+    
+    valueBox(
+      value = nbSender,
+      subtitle = "Number of distinct sender",
+      color = "olive")})
+  
+  output$NbRec <- renderValueBox({
+    
+    nbRecipient <- count(df_message_status %>% distinct(recipient))
+    
+    valueBox(
+      value = nbRecipient,
+      subtitle = "Number of distinct recipient",
+      color = "olive")})
+  
+  output$TotalEmail <- renderValueBox({
+    
+    totalEmail <- count(df_message_status %>% filter(rtype == "TO") %>% distinct(sender, recipient, subject, reference))
+    
+    valueBox(
+      value = totalEmail,
+      subtitle = "Number of distinct email exchange",
+      color = "blue")})
+  
+  output$NbReply <- renderValueBox({
+    
+    nbReply <- count(df_message_status %>% filter(str_detect(subject, "^RE:")) %>% distinct(sender, recipient, subject, reference))
+    
+    valueBox(
+      value = nbReply,
+      subtitle = "Number of email which are reply to another",
+      color = "blue")})
   
   #the plot and table in the email exchange
   
