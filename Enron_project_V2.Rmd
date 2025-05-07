@@ -1337,7 +1337,7 @@ head(df_message_status[df_message_status$sender == "jeff.dasovich@enron.com", "s
 ```
 In the employee data set he is described to be an Employee of Enron. To see if it is really the most active we will compared the number of email send and received by him to the other worker with the same status (Employee) and to all the worker of Enron company. 
 
-##### Compared the number of email send by the worker who seems to be the more active (David Foster), by all worker of it's status (Employee), and all Enron's worker. 
+##### Compared the number of email send by the worker who seems to be the more active (Jeff Dasovich), by all worker of it's status (Employee), and all Enron's worker. 
 
 For that we will compute descriptive comparative statistic between them.
 ```{r}
@@ -1660,7 +1660,7 @@ email_subject_send_graph <- email_subject_send %>%
     sum_email_bankruptcy = sum(email_bankruptcy, na.rm = TRUE)
     ) %>% ungroup() %>%
   #keep one line per year and month
-  distinct(year_month, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event, sum_email_mark_to_market,
+  distinct(year_month, subject, sum_topic_meeting, sum_topic_business_process, sum_topic_core_business, sum_topic_enron_event, sum_email_mark_to_market,
     sum_email_10K_report,
     sum_email_losing_money,
     sum_email_SEC_investigation,
@@ -1706,6 +1706,40 @@ We can see that:
   - For the business process and core topics we see 2 picks which follows the 2 last picks of the meeting topics. This suggest the topic of the meeting concern the business. We could think those meeting are more related to the business process than the business core.
   
   -The email about the enron event are the fewest but we can see a pick of the topic from October 2001 to average February 2002. This make sens with the knowing event where the company was put in bankruptcy at this period. 
+
+For the email subject we look at the frequency of the word we search in them.
+```{r}
+#the list of word research in the subject
+word_list <- list("message","origin","pleas","email","thank","attach","file","copi","inform","receiv","thank","time","meet","look","week","dont","vinc",
+                  "talk","enron","deal","agreement","chang","contract","corp","fax","houston","america","risk","analy","confidential","correction",
+               "market","gas","price","date","power","company","energy","trade","busi","servic","manag",
+               "bankrup","SEC","MTM","fear", "investigation")
+
+#initiate a vector for registering their frequency
+word_count <- c()
+
+##iterate over the list and count the number of time we see each word in the list
+for(i in seq_along(word_list)){
+  
+  search <- as.character(word_list[[i]])
+  nb <- sum(str_count(email_subject_send_graph$subject, search))
+  
+  word_count <- c(word_count, nb)
+  
+}
+
+#draw a wordcloud which represent the words frequency
+
+wordcloud(word_list, word_count, min.freq = 10 ,max.words=length(word_list), col=rainbow(length(word_list), alpha = 0.9), rot.per = 0.3)
+
+```
+
+This heatmap highlight this:
+
+- the most often word see in that list is meet, which is logic with the fact most of the email subject are seen in the meeting topic category.
+
+
+
 
 ```{r fig.width=12}
 #display the different topic trend in the email subject over the study's period
