@@ -9,6 +9,15 @@ library(wordcloud)
 ## isolate the variable which contain text
 #isolate the different subject of email in the subject identify to be related to the Enron company events
 
+topic_meeting <- c("message|origin|pleas|email|thank|attach|file|copi|inform|receiv|thank|all|time|meet|look|week|day|dont|vinc|talk")
+
+topic_business_process <- c("enron|deal|agreement|chang|contract|corp|fax|houston|date|america|risk|analy|confidential|correction")
+
+topic_core_business <- c("market|gas|price|power|company|energy|trade|busi|servic|manag")
+
+topic_enron_event <- c("bankrup|SEC|MTM|fear")
+
+
 df <- df_message_status %>% distinct(date, sender, status_sender, subject, reference) %>%
     mutate(#count the number of email which contain at least one word in the list of each topic
       topic_meeting = if_else(str_detect(subject, topic_meeting), 1, 0),
@@ -50,18 +59,11 @@ df <- df_message_status %>% distinct(date, sender, status_sender, subject, refer
            (sum_email_losing_money!=0)|(sum_email_SEC_investigation!=0)|(sum_email_fear_feeling!=0)|
            (sum_email_correction!=0)|(sum_email_bankruptcy!=0)) 
 
-topic_meeting <- c("message|origin|pleas|email|thank|attach|file|copi|inform|receiv|thank|all|time|meet|look|week|day|dont|vinc|talk")
-
-topic_business_process <- c("enron|deal|agreement|chang|contract|corp|fax|houston|date|america|risk|analy|confidential|correction")
-
-topic_core_business <- c("market|gas|price|power|company|energy|trade|busi|servic|manag")
-
-topic_enron_event <- c("bankrup|SEC|MTM|fear")
 
 word_list <- list("message","origin","pleas","email","thank","attach","file","copi","inform","receiv","thank","time","meet","look","week","dont","vinc","talk",
   "enron","deal","agreement","chang","contract","corp","fax","houston","america","risk","analy","confidential","correction",
                "market","gas","price","power","company","energy","trade","busi","servic","manag",
-               "bankrup","SEC","MTM","fear", "investigation")
+               "bankrup","SEC","MTM","fear", "investigation", "mark-to-market", "10-K", "losing money", "correction")
 
 word_count <- c()
 
@@ -79,6 +81,21 @@ par(bg = "black")
 wordcloud(word_list, word_count, min.freq = 10 ,max.words=length(word_list), col=heat.colors(length(word_list), alpha = 0.9), rot.per = 0.3)
 
 
+df2 <- filter(df, !is.na(reference))
 
+email_words_freq <- c()
+
+for(i in seq_along(word_list)){
+  
+  word <- as.character(word_list[[i]])
+  counting <- as.list(str_locate(df2$reference, word))
+  
+  nb <- sum(!is.na(counting))
+  
+  email_words_freq <- c(email_words_freq, nb)
+  
+}
+
+wordcloud(word_list, email_words_freq, min.freq = 10 ,max.words=length(word_list), col=heat.colors(length(word_list), alpha = 0.9), rot.per = 0.3)
 
 
