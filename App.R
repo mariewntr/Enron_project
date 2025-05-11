@@ -163,51 +163,6 @@ p_rec <- df_message_status %>% distinct(sender, subject, recipient, .keep_all = 
          labels = scales::percent(perc)) %>% 
   arrange(desc(n)) %>% head(10) 
 
-#count the number of email send by jeff dasovich per day
-jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
-  #we count the number of different email subject send per day
-  group_by(date, subject) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
-
-#count the number of email send by all the sender per day
-sender_stat <- df_message_status %>% 
-  #we count the number of different email subject send per day by each sender
-  group_by(date, sender, subject) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "All sender") %>% select(-sender) %>% transform(source = as.factor(source))
-
-#count the number of email send by Employee status per day
-statuts_stat_send <- df_message_status %>% filter(status_sender == "Employee") %>% 
-  #we count the number of different email subject send per day by each sender of status employee
-  group_by(date, sender, subject) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Employee status") %>% transform(source = as.factor(source))
-
-
-Jeff_status_send <- bind_rows(jeff_stat_send, statuts_stat_send)
-Jeff_worker_send <- bind_rows(jeff_stat_send, sender_stat)  
-Jeff_stat_send <- bind_rows(jeff_stat_send, sender_stat, statuts_stat_send)
-
-#statistics on the jeff dasovich email receive per day
-jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
-  group_by(date) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
-
-#statistics on the email send per day by all the recipient
-recipient_stat <- df_message_status %>% group_by(date, recipient) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "All recipient") %>% select(-recipient) %>% transform(source = as.factor(source))
-
-#statistics on the email send per day by the enron's worker who have an employee statuts
-statuts_stat_rec <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Employee status") %>% transform(source = as.factor(source))
-
-Jeff_status_rec <- bind_rows(jeff_stat_rec, statuts_stat_rec)
-Jeff_worker_rec <- bind_rows(jeff_stat_rec, recipient_stat)
-Jeff_rec_stat <- bind_rows(jeff_stat_rec, recipient_stat, statuts_stat_rec)
 
 #to study the email subject and content
 #topics list 
@@ -306,6 +261,8 @@ status_email_subject_rec <- status_email_subject_rec %>%
     values_to = "value")
 
 
+
+
 #for the analyze of the person imply in the Enron event
 #email send:
 person_of_interest_send <- email_subject_send %>%
@@ -402,18 +359,21 @@ person_of_interest_reciveid_subject <-person_of_interest_reciveid_subject %>%
   )
 
 
-#function for the fluw plot
+#function for the flux plot to enhance the app reactivity 
 
 plot_flux <- function(data, year){
-  
+  #create the year_data plot
   year_data <- data %>% filter(year == year) %>%
     arrange(status_sender, status_recipient)
   
+  #create the dataframe for usable by the package for the plot
   adjacencyData <- with(year_data, table(status_sender, status_recipient))
   
+  #draw the flux diagram
   chordDiagram(adjacencyData, transparency = 0.5, grid.col = status_color)
 }
 
+#the base for each plot needed to draw the flux plot
 data_by_year <- per_year %>% filter(year %in% 1999:2002) %>%
       group_by(status_sender, status_recipient) %>%
       mutate(sum = sum(number_exchange)) %>%
@@ -422,6 +382,33 @@ data_by_year <- per_year %>% filter(year %in% 1999:2002) %>%
       filter(status_sender != status_recipient) %>%
       arrange(status_sender, status_recipient)
 
+email_analyze_send <- email_subject_send %>% group_by(year_month) %>%
+  mutate(
+    sum_subject_meeting = sum(subject_meeting),
+    sum_subject_business_process = sum(subject_business_process),
+    sum_subject_core_business = sum(subject_core_business),
+    sum_subject_enron_event = sum(subject_enron_event),
+    sum_email_business_process = sum(email_business_process, na.rm = TRUE),
+    sum_email_core_business = sum(email_core_business, na.rm = TRUE),
+    sum_email_meeting = sum(email_meeting, na.rm = TRUE),
+    sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
+  filter(((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)))%>%
+  #keep one line per year and month
+  select(subject, reference) %>% distinct()
+
+email_rec_analyze <- email_subject_rec %>% group_by(year_month) %>%
+  mutate(
+    sum_subject_meeting = sum(subject_meeting),
+    sum_subject_business_process = sum(subject_business_process),
+    sum_subject_core_business = sum(subject_core_business),
+    sum_subject_enron_event = sum(subject_enron_event),
+    sum_email_business_process = sum(email_business_process, na.rm = TRUE),
+    sum_email_core_business = sum(email_core_business, na.rm = TRUE),
+    sum_email_meeting = sum(email_meeting, na.rm = TRUE),
+    sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
+  filter(((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)))%>%
+  #keep one line per year and month
+  select(subject, reference) %>% distinct()
 
 #the color and label for the different visualisations
 status_color <- c(
@@ -640,7 +627,9 @@ ui <- dashboardPage(
                            fluidRow(column(width = 8,
                                            plotOutput("EmailSubjectSend")),
                                     column(width = 4,
-                                           plotOutput("EmailWordSend")))),
+                                           plotOutput("EmailWordSend")
+                                                                                    
+                                           ))),
                   tabPanel("Received",
                            fluidRow(column(width = 8,
                                            plotOutput("EmailSubjectRec")),
@@ -913,8 +902,27 @@ server <- function(input, output){
   })
 
   output$JeffStatusSendViz <- renderPlot({
+    
+    Jeff_status_send_f <- reactive({
+      
+      jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
+        #we count the number of different email subject send per day
+        group_by(date, subject) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+      
+      statuts_stat_send <- df_message_status %>% filter(status_sender == "Employee") %>% 
+        #we count the number of different email subject send per day by each sender of status employee
+        group_by(date, sender, subject) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Employee status") %>% transform(source = as.factor(source))
+      
+      
+      Jeff_status_send <- bind_rows(jeff_stat_send, statuts_stat_send)
+      
+    })
 
-    ggplot(Jeff_status_send, aes(as.factor(source), email_count, fill = as.factor(source))) +
+    ggplot(Jeff_status_send_f(), aes(as.factor(source), email_count, fill = as.factor(source))) +
       geom_violin(trim = FALSE) +
       geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
       #display the comparative statistic on the violin plot
@@ -934,8 +942,26 @@ server <- function(input, output){
   })
 
   output$JeffWorkerSendViz <- renderPlot({
+    
+    Jeff_worker_send_f <- reactive({
+      
+      jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
+        #we count the number of different email subject send per day
+        group_by(date, subject) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+      
+      sender_stat <- df_message_status %>% 
+        #we count the number of different email subject send per day by each sender
+        group_by(date, sender, subject) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "All sender") %>% select(-sender) %>% transform(source = as.factor(source))
+      
+      Jeff_worker_send <- bind_rows(jeff_stat_send, sender_stat)  
 
-    ggplot(Jeff_worker_send, aes(as.factor(source), email_count, fill = as.factor(source))) +
+    })
+
+    ggplot(Jeff_worker_send_f(), aes(as.factor(source), email_count, fill = as.factor(source))) +
       geom_violin(trim = FALSE) +
       geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
       stat_compare_means(method = "t.test", label.y = 280)+
@@ -954,7 +980,34 @@ server <- function(input, output){
 
   output$JeffSendStat <- renderTable({
 
-    Jeff_stat_send %>% group_by(source)%>%
+    Jeff_stat_send_f <- reactive({
+      
+      jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
+      #we count the number of different email subject send per day
+      group_by(date, subject) %>% 
+      summarise(email_count = n(), .groups = "drop") %>%
+      mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+      
+      sender_stat <- df_message_status %>% 
+        #we count the number of different email subject send per day by each sender
+        group_by(date, sender, subject) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "All sender") %>% select(-sender) %>% transform(source = as.factor(source))
+      
+      statuts_stat_send <- df_message_status %>% filter(status_sender == "Employee") %>% 
+        #we count the number of different email subject send per day by each sender of status employee
+        group_by(date, sender, subject) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Employee status") %>% transform(source = as.factor(source))
+      
+      
+      Jeff_status_send <- bind_rows(jeff_stat_send, statuts_stat_send)
+      Jeff_worker_send <- bind_rows(jeff_stat_send, sender_stat)  
+      Jeff_stat_send <- bind_rows(jeff_stat_send, sender_stat, statuts_stat_send)
+      
+      })
+    
+    Jeff_stat_send_f() %>% group_by(source)%>%
       summarise(
         mean = mean(email_count),
         sd = sd(email_count),
@@ -965,12 +1018,30 @@ server <- function(input, output){
   })
 
   output$JeffRecViz <- renderPlot({
+    
+    Jeff_status_rec_f <- reactive({
+      
+      #statistics on the jeff dasovich email receive per day
+      jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
+        group_by(date) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+      
+      #statistics on the email send per day by the enron's worker who have an employee statuts
+      statuts_stat_rec <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Employee status") %>% transform(source = as.factor(source))
+      
+      Jeff_status_rec <- bind_rows(jeff_stat_rec, statuts_stat_rec)
+      
+    })
+    
 
-    ggplot(Jeff_status_rec, aes(as.factor(source), email_count, fill = as.factor(source))) +
+    ggplot(Jeff_status_rec_f(), aes(as.factor(source), email_count, fill = as.factor(source))) +
       geom_violin(trim = FALSE) +
       geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
       #compared statisticaly the 2 group to see if the difference is significant or not
-      stat_compare_means(method = "t.test", label.y = max(Jeff_status_rec$email_count) + 2)+
+      stat_compare_means(method = "t.test", label.y = 1700)+
       labs(title = "Comparison of the email count between
        Jeff Dasovitch and the Enron's Employee",
            x = "Source",
@@ -984,8 +1055,25 @@ server <- function(input, output){
   })
 
   output$JeffWorkerRecViz <- renderPlot({
+    
+    Jeff_worker_rec_f <- reactive({
+      
+      #statistics on the jeff dasovich email receive per day
+      jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
+        group_by(date) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+      
+      #statistics on the email send per day by all the recipient
+      recipient_stat <- df_message_status %>% group_by(date, recipient) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "All recipient") %>% select(-recipient) %>% transform(source = as.factor(source))
+      
+      Jeff_worker_rec <- bind_rows(jeff_stat_rec, recipient_stat)
+      
+    })
 
-    ggplot(Jeff_worker_rec, aes(as.factor(source), email_count, fill = as.factor(source))) +
+    ggplot(Jeff_worker_rec_f(), aes(as.factor(source), email_count, fill = as.factor(source))) +
       geom_violin(trim = FALSE) +
       geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
       ylim(c(-10,350))+
@@ -1003,8 +1091,33 @@ server <- function(input, output){
   })
 
   output$JeffRecStat <- renderTable({
+    
+    Jeff_rec_stat_f <- reactive({
+      
+      #statistics on the jeff dasovich email receive per day
+      jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
+        group_by(date) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+      
+      #statistics on the email send per day by all the recipient
+      recipient_stat <- df_message_status %>% group_by(date, recipient) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "All recipient") %>% select(-recipient) %>% transform(source = as.factor(source))
+      
+      #statistics on the email send per day by the enron's worker who have an employee statuts
+      statuts_stat_rec <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
+        summarise(email_count = n(), .groups = "drop") %>%
+        mutate(source = "Employee status") %>% transform(source = as.factor(source))
+      
+      Jeff_status_rec <- bind_rows(jeff_stat_rec, statuts_stat_rec)
+      Jeff_worker_rec <- bind_rows(jeff_stat_rec, recipient_stat)
+      Jeff_rec_stat <- bind_rows(jeff_stat_rec, recipient_stat, statuts_stat_rec)
+      
+    })
+    
 
-    Jeff_rec_stat %>% group_by(source) %>%
+    Jeff_rec_stat_f() %>% group_by(source) %>%
       summarise(
         mean = mean(email_count),
         median = median(email_count),
@@ -1018,480 +1131,424 @@ server <- function(input, output){
   })
    
    #email subject and content analysis
-#   
-#   #we create a reactive plot for use it in the plot of this part
-#   Send <- reactive({
-#     email_subject_send %>% group_by(year_month) %>% mutate(nb_email_send = n()) %>% ungroup()
-#   })
-#   
-#   output$EmailSend <- renderPlot({
-#       ggplot(Send(),aes(year_month, nb_email_send)) +
-#       geom_line(size = 1)+
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
-#       labs(title = "Number of email send in the study period",
-#            y = "Email number",
-#            x = "Study period")
-#   })
-#   
-#   rec <- reactive({email_subject_rec %>% group_by(year_month) %>% mutate(nb_email_rec = n()) %>% ungroup()})
-#   
-#   output$Emailrec <- renderPlot({
-#       ggplot(rec(),aes(year_month, nb_email_rec)) +
-#       geom_line(size = 1)+
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
-#       labs(title = "Number of email received in the study period",
-#            y = "Email number",
-#            x = "Study period")
-#     
-#   })
-#   
-#   email_analyze <- reactive({
-#     email_subject_send %>% group_by(year_month) %>%
-#       mutate(
-#         sum_subject_meeting = sum(subject_meeting),
-#         sum_subject_business_process = sum(subject_business_process),
-#         sum_subject_core_business = sum(subject_core_business),
-#         sum_subject_enron_event = sum(subject_enron_event),
-#         sum_email_business_process = sum(email_business_process, na.rm = TRUE),
-#         sum_email_core_business = sum(email_core_business, na.rm = TRUE),
-#         sum_email_meeting = sum(email_meeting, na.rm = TRUE),
-#         sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
-#       filter(((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)))%>%
-#       #keep one line per year and month
-#       distinct(year_month, subject, reference, sum_subject_meeting, sum_subject_business_process, sum_subject_core_business, sum_subject_enron_event, 
-#                sum_email_business_process,sum_email_core_business,sum_email_meeting,sum_email_enron_event) %>%
-#       #change the orientation of the data set
-#       pivot_longer(
-#         cols = 4:11,
-#         names_to = "topics",
-#         values_to = "value") 
-#   })
-#   
-#   
-#   output$EmailSubjectSend <- renderPlot({
-#     
-#      email_analyze()%>% filter(
-#        year_month >= input$date_range[1], #for year_month is greater than the min date in the range
-#        year_month <= input$date_range[2],
-#        topics %in% names(topic_label[topic_label %in% input$subject_choice])) %>%
-#       #scatter plot and trend line
-#       ggplot(aes(year_month,value, color=topics))+
-#       geom_line(size = 1)+
-#       #label, axis, and legend
-#       labs(color = "Email subject and text categories",
-#            title = "Email subject and text analyze over the study period",
-#            x = "Study period",
-#            y = "Number of email per topics") +
-#       #to display the year and month, every 3 months for a better reading
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
-#       scale_color_manual(#to get only the customization for the email categories
-#         values = topic_colors,
-#         labels = topic_label)
-#     
-#   })
-#   
-#   output$EmailWordSend <- renderPlot({
-#     
-#     df <-email_analyze() 
-#     
-#     #initiate the list for storing the count for each words in text and subject
-#     email_words_freq <- c()
-#     subject_freq <- c()
-#     
-#     for(j in seq_along(word_list)){
-#       
-#       word <- as.character(word_list[[j]])
-#       #count for the subject
-#       counting_subject <- sum(str_count(df$subject, word))
-#       
-#       subject_freq <- c(subject_freq, counting_subject)
-#       
-#       #we pass through a locate to return in a list the index of the row where we find them
-#       counting_text <- as.list(str_locate(df$reference, word))
-#       
-#       #we count the index for which we don't have NA
-#       nb <- sum(!is.na(counting_text))
-#       
-#       #store the frequency for each words in the email text
-#       email_words_freq <- c(email_words_freq, nb)
-#       
-#     }
-#     
-#     #for each status we make a total with the count from the subject and the text
-#     total_count <- subject_freq + email_words_freq
-#     
-#     #draw the wordcloud with the frequency of each word, only the top 10
-#     wordcloud(word_list, total_count, min.freq = 10 ,max.words= length(word_list),scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
-#     title(main = paste0("The top words seen in the email subject and text send"), col.main = "black", font.main = 2)
-#     
-#   })
-#   
-#   email_rec_analyze <- reactive({
-#     email_subject_rec %>% 
-#       group_by(year_month) %>%
-#       mutate(
-#         sum_subject_meeting = sum(subject_meeting),
-#         sum_subject_business_process = sum(subject_business_process),
-#         sum_subject_core_business = sum(subject_core_business),
-#         sum_subject_enron_event = sum(subject_enron_event), 
-#         sum_email_business_process = sum(email_business_process, na.rm = TRUE),
-#         sum_email_core_business = sum(email_core_business, na.rm = TRUE),
-#         sum_email_meeting = sum(email_meeting, na.rm = TRUE),
-#         sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
-#       filter ((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)) %>%
-#       #keep one line per year and month
-#       distinct(year_month, subject, reference, sum_subject_meeting, sum_subject_business_process, sum_subject_core_business, sum_subject_enron_event,
-#                sum_email_business_process,sum_email_core_business,sum_email_meeting,sum_email_enron_event) %>%
-#       #change the orientation of the data set
-#       pivot_longer(
-#         cols = 4:11,
-#         names_to = "topics",
-#         values_to = "value") 
-#   })
-# 
-#   output$EmailSubjectRec <- renderPlot({
-#     email_rec_analyze()%>%
-#     filter(
-#       year_month >= input$date_range[1], #for year_month is greater than the min date in the range
-#       year_month <= input$date_range[2],
-#       topics %in% names(topic_label[topic_label %in% input$subject_choice])) %>%
-#       #scatter plot and trend line
-#       ggplot(aes(year_month,value, color=topics))+
-#       geom_line(size = 1)+
-#       #label, axis, and legend
-#       labs(color = "Email subject categories",
-#            title = "Email subject analyze over the study period",
-#            x = "Study period",
-#            y = "Number of email per topics") +
-#       #to display the year and month, every 3 months for a better reading
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
-#       scale_color_manual(#to get only the customization for the email categories
-#         values = topic_colors,
-#         labels = topic_label)
-# 
-#   })
-#   
-#   output$EmailWordRec <- renderPlot({
-#     
-#     df <-email_rec_analyze() 
-#     
-#     #initiate the list for storing the count for each words in text and subject
-#     email_words_freq <- c()
-#     subject_freq <- c()
-#     
-#     for(j in seq_along(word_list)){
-#       
-#       word <- as.character(word_list[[j]])
-#       #count for the subject
-#       counting_subject <- sum(str_count(df$subject, word))
-#       
-#       subject_freq <- c(subject_freq, counting_subject)
-#       
-#       #we pass through a locate to return in a list the index of the row where we find them
-#       counting_text <- as.list(str_locate(df$reference, word))
-#       
-#       #we count the index for which we don't have NA
-#       nb <- sum(!is.na(counting_text))
-#       
-#       #store the frequency for each words in the email text
-#       email_words_freq <- c(email_words_freq, nb)
-#       
-#     }
-#     #for each status we make a total with the count from the subject and the text
-#     total_count <- subject_freq + email_words_freq
-#     
-#     #draw the wordcloud with the frequency of each word, only the top 10
-#     wordcloud(word_list, total_count, min.freq = 10 ,max.words= length(word_list),scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
-#     title(main = paste0("The top words seen in the email subject and text received"), col.main = "black", font.main = 2)
-#     
-#   })
-#   
-#   #analyze the email for each status
-#   
-#   output$nbEmailSendStatus <- renderPlot({
-#     
-#     df_message_status %>% filter(status_sender == input$status_choice_status) %>% 
-#       group_by(year,month)%>%
-#       count() %>% 
-#       ggplot(aes(month, n, fill = month))+
-#       geom_bar(stat = "identity") +
-#       facet_grid(~year)+
-#       labs(title = paste("Email send per month for each year by the", input$status_choice_status),
-#            y = "Email count per month")+
-#       scale_fill_manual(
-#         values = month_color,
-#         labels = month_label)+
-#       theme(legend.position = "bottom",
-#             axis.text.x = element_blank(),
-#             axis.ticks.x = element_blank(),
-#             axis.title.x = element_blank())
-#     
-#   })
-#            
-#              
-#   output$nbEmailRecStatus <- renderPlot({
-#     
-#     df_message_status %>% filter(status_recipient == input$status_choice_status) %>% 
-#       group_by(year,month)%>%
-#       count() %>% 
-#       ggplot(aes(month, n, fill = month))+
-#       geom_bar(stat = "identity") +
-#       facet_grid(~year)+
-#       labs(title = paste("Email received per month for each year by the", input$status_choice_status),
-#            y = "Email count per month",
-#            x = "Study period")+
-#       scale_fill_manual(
-#         values = month_color,
-#         labels = month_label)+
-#       theme(legend.position = "bottom",
-#             axis.text.x = element_blank(),
-#             axis.ticks.x = element_blank(),
-#             axis.title.x = element_blank())
-#   })
-#   
-# 
-#   
-#   
-#   output$SubjectEmailSendStatus <- renderPlot({
-#     
-#    status_email_subject_send %>% 
-#       filter(
-#         year_month >= input$date_range_status[1], #for year_month is greater than the min date in the range
-#         year_month <= input$date_range_status[2], #for year_month is smaller than the min date in the range
-#     status_sender == input$status_choice_status, #for selecting the status
-#     topic_email %in% names(topic_label[topic_label %in% input$subject_choice_status]) #for selecting the topics
-#     )%>% 
-#       ggplot(aes(year_month,value, color = topic_email))+
-#       geom_line(size = 1) +
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+    
-#       labs(color = "Email key words and topics",
-#            title = paste("Email send by", input$status_choice_status, ", content and subject analyze"),
-#            y = "Email count",
-#            x = "Study period")+
-#       scale_color_manual(values = topic_colors,
-#                          labels = topic_label)+
-#       theme(legend.text.position = "bottom")})
-#   
-#   filtered_email_send <- reactive({
-#     email_subject_send %>%
-#       #we focus on the worker which their status are know
-#       filter(status_sender == input$status_choice_status) %>%
-#       #compute the sum of each topics for each year studied
-#       group_by(year_month, status_sender) %>%
-#       mutate(
-#         sum_subject_meeting = sum(subject_meeting),
-#         sum_subject_business_process = sum(subject_business_process),
-#         sum_subject_core_business = sum(subject_core_business),
-#         sum_subject_enron_event = sum(subject_enron_event),
-#         #for the email we use na.rm = TRUE to allow the sum to be done
-#         sum_email_business_process = sum(email_business_process, na.rm = TRUE),
-#         sum_email_core_business = sum(email_core_business, na.rm = TRUE),
-#         sum_email_meeting = sum(email_meeting, na.rm = TRUE),
-#         sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
-#       filter((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)) %>%
-#       #keep one line per year and month
-#       distinct(status_sender, subject, reference)
-#   })
-#   
-#   output$WordcloudSendStatus <- renderPlot({
-#     
-#    df <- filtered_email_send()
-#    
-#    #initiate the list for storing the count for each words in text and subject
-#    email_words_freq <- c()
-#    subject_freq <- c()
-#    
-#    for(j in seq_along(word_list)){
-#      
-#      word <- as.character(word_list[[j]])
-#      #count for the subject
-#      counting_subject <- sum(str_count(df$subject, word))
-#      
-#      subject_freq <- c(subject_freq, counting_subject)
-#      
-#      #we pass through a locate to return in a list the index of the row where we find them
-#      counting_text <- as.list(str_locate(df$reference, word))
-#      
-#      #we count the index for which we don't have NA
-#      nb <- sum(!is.na(counting_text))
-#      
-#      #store the frequency for each words in the email text
-#      email_words_freq <- c(email_words_freq, nb)
-#      
-#    }
-#    
-#    #for each status we make a total with the count from the subject and the text
-#    total_count <- subject_freq + email_words_freq
-#    
-#    #draw the wordcloud with the frequency of each word, only the top 10
-#    wordcloud(word_list, total_count, min.freq = 10 ,max.words= 10,scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
-#    title(main = paste0("Top 10 words in the email send by ",input$status_choice_status), col.main = "black", font.main = 2)
-#    
-#   })
-#   
-#   filtered_email_rec <- reactive({
-#     email_subject_rec %>%
-#       #we focus on the worker which their status are know
-#       filter(status_recipient == input$status_choice_status) %>%
-#       #compute the sum of each topics for each year studied
-#       group_by(year_month, status_recipient) %>%
-#       mutate(
-#         sum_subject_meeting = sum(subject_meeting),
-#         sum_subject_business_process = sum(subject_business_process),
-#         sum_subject_core_business = sum(subject_core_business),
-#         sum_subject_enron_event = sum(subject_enron_event),
-#         #for the email we use na.rm = TRUE to allow the sum to be done
-#         sum_email_business_process = sum(email_business_process, na.rm = TRUE),
-#         sum_email_core_business = sum(email_core_business, na.rm = TRUE),
-#         sum_email_meeting = sum(email_meeting, na.rm = TRUE),
-#         sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
-#       filter((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)) %>%
-#       #keep one line per year and month
-#       distinct(status_recipient, subject, reference)
-#   })
-#   
-#   output$WordcloudRecStatus <- renderPlot({
-#     
-#     df <- filtered_email_rec()
-#     
-#     #initiate the list for storing the count for each words in text and subject
-#     email_words_freq <- c()
-#     subject_freq <- c()
-#     
-#     for(j in seq_along(word_list)){
-#       
-#       word <- as.character(word_list[[j]])
-#       #count for the subject
-#       counting_subject <- sum(str_count(df$subject, word))
-#       
-#       subject_freq <- c(subject_freq, counting_subject)
-#       
-#       #we pass through a locate to return in a list the index of the row where we find them
-#       counting_text <- as.list(str_locate(df$reference, word))
-#       
-#       #we count the index for which we don't have NA
-#       nb <- sum(!is.na(counting_text))
-#       
-#       #store the frequency for each words in the email text
-#       email_words_freq <- c(email_words_freq, nb)
-#       
-#     }
-#     
-#     #for each status we make a total with the count from the subject and the text
-#     total_count <- subject_freq + email_words_freq
-#     
-#     #draw the wordcloud with the frequency of each word, only the top 10
-#     #par(bg = "black")
-#     wordcloud(word_list, total_count, min.freq = 10 ,max.words= 10,scale = c(3, 0.5),col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
-#     title(main = paste0("Top 10 words in the email received by ",input$status_choice_status), col.main = "black", font.main = 2)
-#     
-#   })
-#   
-#   output$SubjectEmailRecStatus <- renderPlot({
-#     
-#     status_email_subject_rec %>% 
-#       filter(
-#         year_month >= input$date_range_status[1], #for year_month is greater than the min date in the range
-#         year_month <= input$date_range_status[2], #for year_month is smaller than the min date in the range
-#         status_recipient == input$status_choice_status, #for selecting the status
-#         topic_email %in% names(topic_label[topic_label %in% input$subject_choice_status]) #for selecting the topics
-#       )%>% 
-#       ggplot(aes(year_month,value, color = topic_email))+
-#       geom_line(size = 1) +
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+    
-#       labs(color = "Email key words and topics",
-#            title = paste("Email received by", input$status_choice_status, ", content and subject analyze"),
-#            y = "Email count")+
-#       scale_color_manual(values = topic_colors,
-#                          labels = topic_label)+
-#       theme(legend.text.position = "bottom")
-#     
-#   })
-#   
-#   
-#   
-#   #analyze the content and subject of email for specific enron worker
-#   output$EnronWorkerSend <- renderPlot({
-#     
-#     person_of_interest_send %>% filter(email_label_sender == input$worker_choice_send) %>%
-#       group_by(year,month) %>%
-#       count() %>% ggplot(aes(month, n, fill = month))+
-#       geom_bar(stat = "identity") +
-#       facet_grid(~year)+
-#       labs(title = input$worker_choice_send,
-#            y = "Email count per month")+
-#       scale_fill_manual(
-#         values = month_color,
-#         labels = month_label)+
-#       theme(legend.position = "bottom",
-#             axis.text.x = element_blank(),
-#             axis.ticks.x = element_blank(),
-#             axis.title.x = element_blank())
-#     
-#   })
-#   
-#   output$EnronWorkerRec <- renderPlot({
-#     
-#     person_of_interest_reciveid %>% filter(email_label_recipient == input$worker_choice_rec)%>% 
-#       group_by(year,month) %>%
-#       count() %>% ggplot(aes(month, n, fill = month))+
-#       geom_bar(stat = "identity") +
-#       facet_grid(~year)+
-#       labs(title = input$worker_choice_rec,
-#            y = "Email count per month")+
-#       scale_fill_manual(
-#         values = month_color,
-#         labels = month_label)+
-#       theme(legend.position = "bottom",
-#             axis.text.x = element_blank(),
-#             axis.ticks.x = element_blank(),
-#             axis.title.x = element_blank())
-#     
-#   })
-#   
-#   output$EnronWorkerSubjectSend <- renderPlot({
-#     
-#     person_of_interest_send_subject %>% filter(
-#       year_month >= input$date_range_actor[1], #for year_month is greater than the min date in the range
-#       year_month <= input$date_range_actor[2], #for year_month is smaller than the min date in the range
-#       email_label_sender == input$worker_choice_send,
-#       topic_email %in% names(topic_label[topic_label %in% input$subject_choice_actor]) #for selecting the topics
-#       ) %>% 
-#       ggplot(aes(year_month,value, color = topic_email))+
-#       geom_line(size = 1) +
-#       labs(color = "Email subject and content topics",
-#            title = input$worker_choice_send,
-#            y = "Number of email per topics",
-#            x = "Study period")+
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+ 
-#       scale_color_manual(values = topic_colors,
-#                          labels = topic_label)+
-#       theme(legend.text.position = "bottom")
-#     
-#   })
-#   
-#   output$EnronWorkerSubjectRec <- renderPlot({
-#     
-#     person_of_interest_reciveid_subject %>% filter(
-#       year_month >= input$date_range_actor[1], #for year_month is greater than the min date in the range
-#       year_month <= input$date_range_actor[2], #for year_month is smaller than the min date in the range
-#       email_label_recipient == input$worker_choice_rec,
-#       topic_email %in% names(topic_label[topic_label %in% input$subject_choice_actor]) #for selecting the topics
-#       )%>% 
-#       ggplot(aes(year_month,value, color = topic_email))+
-#       geom_line(size = 1) +
-#       scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
-#       labs(color = "Email subject and content topics",
-#            title = input$worker_choice_rec,
-#            y = "Number of email per topics",
-#            x = "Study period")+
-#       scale_color_manual(values = topic_colors,
-#                          labels = topic_label)+
-#       theme(legend.text.position = "bottom")
-#     
-#   })
-#   
-# 
+
+  #we create a reactive plot for use it in the plot of this part
+  
+  output$EmailSend <- renderPlot({
+    
+    Send <- reactive({
+      email_subject_send %>% group_by(year_month) %>% mutate(nb_email_send = n()) %>% ungroup()
+    })
+    
+      ggplot(Send(),aes(year_month, nb_email_send)) +
+      geom_line(size = 1)+
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(title = "Number of email send in the study period",
+           y = "Email number",
+           x = "Study period")
+  })
+
+  output$Emailrec <- renderPlot({
+    
+    rec <- reactive({email_subject_rec %>% group_by(year_month) %>% mutate(nb_email_rec = n()) %>% ungroup()})
+    
+      ggplot(rec(),aes(year_month, nb_email_rec)) +
+      geom_line(size = 1)+
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(title = "Number of email received in the study period",
+           y = "Email number",
+           x = "Study period")
+
+  })
+
+
+  output$EmailSubjectSend <- renderPlot({
+    
+    email_analyze <- reactive({
+      email_subject_send %>% group_by(year_month) %>%
+        mutate(
+          sum_subject_meeting = sum(subject_meeting),
+          sum_subject_business_process = sum(subject_business_process),
+          sum_subject_core_business = sum(subject_core_business),
+          sum_subject_enron_event = sum(subject_enron_event),
+          sum_email_business_process = sum(email_business_process, na.rm = TRUE),
+          sum_email_core_business = sum(email_core_business, na.rm = TRUE),
+          sum_email_meeting = sum(email_meeting, na.rm = TRUE),
+          sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
+        filter(((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)))%>%
+        #keep one line per year and month
+        select(year_month, subject, reference, sum_subject_meeting, sum_subject_business_process, sum_subject_core_business, sum_subject_enron_event,
+               sum_email_business_process,sum_email_core_business,sum_email_meeting,sum_email_enron_event) %>% distinct() %>%
+        #change the orientation of the data set
+        pivot_longer(
+          cols = 4:11,
+          names_to = "topics",
+          values_to = "value")
+    })
+
+     email_analyze()%>% filter(
+       year_month >= input$date_range[1], #for year_month is greater than the min date in the range
+       year_month <= input$date_range[2],
+       topics %in% names(topic_label[topic_label %in% input$subject_choice])) %>%
+      #scatter plot and trend line
+      ggplot(aes(year_month,value, color=topics))+
+      geom_line(size = 1)+
+      #label, axis, and legend
+      labs(color = "Email subject and text categories",
+           title = "Email subject and text analyze over the study period",
+           x = "Study period",
+           y = "Number of email per topics") +
+      #to display the year and month, every 3 months for a better reading
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      scale_color_manual(#to get only the customization for the email categories
+        values = topic_colors,
+        labels = topic_label)
+
+  })
+
+  output$EmailWordSend <- renderPlot({
+    
+    #initiate the list for storing the count for each words in text and subject
+    email_words_freq <- c()
+    subject_freq <- c()
+    
+    subject_freq <- sapply(word_list, function(i) sum(str_count(email_analyze_send$subject, i)))
+    
+    email_words_freq <- sapply(word_list, function(j) sum(!is.na(as.list(str_locate(email_analyze_send$reference, j)))))
+    
+    #for each status we make a total with the count from the subject and the text
+    total_count <- subject_freq + email_words_freq
+    
+    #draw the wordcloud with the frequency of each word, only the top 10
+    wordcloud(word_list, total_count, min.freq = 10 ,max.words= length(word_list),scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
+    title(main = paste0("The top words seen in the email subject and text send"), col.main = "black", font.main = 2)
+    
+  })
+
+  output$EmailSubjectRec <- renderPlot({
+    
+    email_analyze_rec <- reactive({email_subject_rec %>%
+      group_by(year_month) %>%
+      mutate(
+        sum_subject_meeting = sum(subject_meeting),
+        sum_subject_business_process = sum(subject_business_process),
+        sum_subject_core_business = sum(subject_core_business),
+        sum_subject_enron_event = sum(subject_enron_event),
+        sum_email_business_process = sum(email_business_process, na.rm = TRUE),
+        sum_email_core_business = sum(email_core_business, na.rm = TRUE),
+        sum_email_meeting = sum(email_meeting, na.rm = TRUE),
+        sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
+      filter ((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)) %>%
+      #keep one line per year and month
+      select(year_month, subject, reference, sum_subject_meeting, sum_subject_business_process, sum_subject_core_business, sum_subject_enron_event,
+             sum_email_business_process,sum_email_core_business,sum_email_meeting,sum_email_enron_event) %>% distinct() %>%
+      #change the orientation of the data set
+      pivot_longer(
+        cols = 4:11,
+        names_to = "topics",
+        values_to = "value")})
+    
+    
+
+    email_analyze_rec() %>%
+    filter(
+      year_month >= input$date_range[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range[2],
+      topics %in% names(topic_label[topic_label %in% input$subject_choice])) %>%
+      #scatter plot and trend line
+      ggplot(aes(year_month,value, color=topics))+
+      geom_line(size = 1)+
+      #label, axis, and legend
+      labs(color = "Email subject categories",
+           title = "Email subject analyze over the study period",
+           x = "Study period",
+           y = "Number of email per topics") +
+      #to display the year and month, every 3 months for a better reading
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      scale_color_manual(#to get only the customization for the email categories
+        values = topic_colors,
+        labels = topic_label)
+
+  })
+  
+  output$EmailWordRec <- renderPlot({
+
+    #initiate the list for storing the count for each words in text and subject
+    email_words_freq <- c()
+    subject_freq <- c()
+    
+    subject_freq <- sapply(word_list, function(i) sum(str_count(email_rec_analyze$subject, i)))
+    
+    email_words_freq <- sapply(word_list, function(j) sum(!is.na(as.list(str_locate(email_rec_analyze$reference, j)))))
+    
+    #for each status we make a total with the count from the subject and the text
+    total_count <- subject_freq + email_words_freq
+    
+    #draw the wordcloud with the frequency of each word, only the top 10
+    wordcloud(word_list, total_count, min.freq = 10 ,max.words= length(word_list),scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
+    title(main = paste0("The top words seen in the email subject and text received"), col.main = "black", font.main = 2)
+
+  })
+
+  #analyze the email for each status
+
+  output$nbEmailSendStatus <- renderPlot({
+
+    df_message_status %>% filter(status_sender == input$status_choice_status) %>%
+      group_by(year,month)%>%
+      count() %>%
+      ggplot(aes(month, n, fill = month))+
+      geom_bar(stat = "identity") +
+      facet_grid(~year)+
+      labs(title = paste("Email send per month for each year by the", input$status_choice_status),
+           y = "Email count per month")+
+      scale_fill_manual(
+        values = month_color,
+        labels = month_label)+
+      theme(legend.position = "bottom",
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank())
+
+  })
+
+
+  output$nbEmailRecStatus <- renderPlot({
+
+    df_message_status %>% filter(status_recipient == input$status_choice_status) %>%
+      group_by(year,month)%>%
+      count() %>%
+      ggplot(aes(month, n, fill = month))+
+      geom_bar(stat = "identity") +
+      facet_grid(~year)+
+      labs(title = paste("Email received per month for each year by the", input$status_choice_status),
+           y = "Email count per month",
+           x = "Study period")+
+      scale_fill_manual(
+        values = month_color,
+        labels = month_label)+
+      theme(legend.position = "bottom",
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank())
+  })
+
+
+
+
+  output$SubjectEmailSendStatus <- renderPlot({
+
+   status_email_subject_send %>%
+      filter(
+        year_month >= input$date_range_status[1], #for year_month is greater than the min date in the range
+        year_month <= input$date_range_status[2], #for year_month is smaller than the min date in the range
+    status_sender == input$status_choice_status, #for selecting the status
+    topic_email %in% names(topic_label[topic_label %in% input$subject_choice_status]) #for selecting the topics
+    )%>%
+      ggplot(aes(year_month,value, color = topic_email))+
+      geom_line(size = 1) +
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(color = "Email key words and topics",
+           title = paste("Email send by", input$status_choice_status, ", content and subject analyze"),
+           y = "Email count",
+           x = "Study period")+
+      scale_color_manual(values = topic_colors,
+                         labels = topic_label)+
+      theme(legend.text.position = "bottom")})
+  
+
+  output$WordcloudSendStatus <- renderPlot({
+    
+    filtered_email_send <- reactive({
+      email_subject_send %>%
+        #we focus on the worker which their status are know
+        filter(status_sender == input$status_choice_status) %>%
+        #compute the sum of each topics for each year studied
+        group_by(year_month, status_sender) %>%
+        mutate(
+          sum_subject_meeting = sum(subject_meeting),
+          sum_subject_business_process = sum(subject_business_process),
+          sum_subject_core_business = sum(subject_core_business),
+          sum_subject_enron_event = sum(subject_enron_event),
+          #for the email we use na.rm = TRUE to allow the sum to be done
+          sum_email_business_process = sum(email_business_process, na.rm = TRUE),
+          sum_email_core_business = sum(email_core_business, na.rm = TRUE),
+          sum_email_meeting = sum(email_meeting, na.rm = TRUE),
+          sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
+        filter((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)) %>%
+        #keep one line per year and month
+        distinct(status_sender, subject, reference)
+    })
+
+   df <- filtered_email_send() 
+
+   #initiate the list for storing the count for each words in text and subject
+   email_words_freq <- c()
+   subject_freq <- c()
+
+   subject_freq <- sapply(word_list, function(i) sum(str_count(df$subject, i)))
+   
+   email_words_freq <- sapply(word_list, function(j) sum(!is.na(as.list(str_locate(df$reference, j)))))
+   
+   
+   #for each status we make a total with the count from the subject and the text
+   total_count <- subject_freq + email_words_freq
+
+   #draw the wordcloud with the frequency of each word, only the top 10
+   wordcloud(word_list, total_count, min.freq = 10 ,max.words= 10,scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
+   title(main = paste0("Top 10 words in the email send by ",input$status_choice_status), col.main = "black", font.main = 2)
+
+  })
+
+   output$WordcloudRecStatus <- renderPlot({
+  
+  filtered_email_rec <- reactive({
+    email_subject_rec %>%
+      #we focus on the worker which their status are know
+      filter(status_recipient == input$status_choice_status) %>%
+      #compute the sum of each topics for each year studied
+      group_by(year_month, status_recipient) %>%
+      mutate(
+        sum_subject_meeting = sum(subject_meeting),
+        sum_subject_business_process = sum(subject_business_process),
+        sum_subject_core_business = sum(subject_core_business),
+        sum_subject_enron_event = sum(subject_enron_event),
+        #for the email we use na.rm = TRUE to allow the sum to be done
+        sum_email_business_process = sum(email_business_process, na.rm = TRUE),
+        sum_email_core_business = sum(email_core_business, na.rm = TRUE),
+        sum_email_meeting = sum(email_meeting, na.rm = TRUE),
+        sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
+      filter((sum_subject_meeting != 0) | (sum_subject_business_process != 0) | (sum_subject_core_business != 0) | (sum_subject_enron_event != 0) | (sum_email_business_process != 0) | (sum_email_core_business != 0) | (sum_email_meeting != 0) | (sum_email_enron_event != 0)) %>%
+      #keep one line per year and month
+      distinct(status_recipient, subject, reference)
+  })
+  
+    df <- filtered_email_rec() 
+
+    #initiate the list for storing the count for each words in text and subject
+    email_words_freq <- c()
+    subject_freq <- c()
+    
+    subject_freq <- sapply(word_list, function(i) sum(str_count(df$subject, i)))
+    
+    email_words_freq <- sapply(word_list, function(j) sum(!is.na(as.list(str_locate(df$reference, j)))))
+    
+
+    #for each status we make a total with the count from the subject and the text
+    total_count <- subject_freq + email_words_freq
+
+    #draw the wordcloud with the frequency of each word, only the top 10
+    #par(bg = "black")
+    wordcloud(word_list, total_count, min.freq = 10 ,max.words= 10,scale = c(3, 0.5),col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
+    title(main = paste0("Top 10 words in the email received by ",input$status_choice_status), col.main = "black", font.main = 2)
+
+  })
+
+  output$SubjectEmailRecStatus <- renderPlot({
+
+    status_email_subject_rec %>%
+      filter(
+        year_month >= input$date_range_status[1], #for year_month is greater than the min date in the range
+        year_month <= input$date_range_status[2], #for year_month is smaller than the min date in the range
+        status_recipient == input$status_choice_status, #for selecting the status
+        topic_email %in% names(topic_label[topic_label %in% input$subject_choice_status]) #for selecting the topics
+      )%>%
+      ggplot(aes(year_month,value, color = topic_email))+
+      geom_line(size = 1) +
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(color = "Email key words and topics",
+           title = paste("Email received by", input$status_choice_status, ", content and subject analyze"),
+           y = "Email count")+
+      scale_color_manual(values = topic_colors,
+                         labels = topic_label)+
+      theme(legend.text.position = "bottom")
+
+  })
+
+
+
+  #analyze the content and subject of email for specific enron worker
+  output$EnronWorkerSend <- renderPlot({
+
+    person_of_interest_send %>% filter(email_label_sender == input$worker_choice_send) %>%
+      group_by(year,month) %>%
+      count() %>% ggplot(aes(month, n, fill = month))+
+      geom_bar(stat = "identity") +
+      facet_grid(~year)+
+      labs(title = input$worker_choice_send,
+           y = "Email count per month")+
+      scale_fill_manual(
+        values = month_color,
+        labels = month_label)+
+      theme(legend.position = "bottom",
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank())
+
+  })
+
+  output$EnronWorkerRec <- renderPlot({
+
+    person_of_interest_reciveid %>% filter(email_label_recipient == input$worker_choice_rec)%>%
+      group_by(year,month) %>%
+      count() %>% ggplot(aes(month, n, fill = month))+
+      geom_bar(stat = "identity") +
+      facet_grid(~year)+
+      labs(title = input$worker_choice_rec,
+           y = "Email count per month")+
+      scale_fill_manual(
+        values = month_color,
+        labels = month_label)+
+      theme(legend.position = "bottom",
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.title.x = element_blank())
+
+  })
+
+  output$EnronWorkerSubjectSend <- renderPlot({
+
+    person_of_interest_send_subject %>% filter(
+      year_month >= input$date_range_actor[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range_actor[2], #for year_month is smaller than the min date in the range
+      email_label_sender == input$worker_choice_send,
+      topic_email %in% names(topic_label[topic_label %in% input$subject_choice_actor]) #for selecting the topics
+      ) %>%
+      ggplot(aes(year_month,value, color = topic_email))+
+      geom_line(size = 1) +
+      labs(color = "Email subject and content topics",
+           title = input$worker_choice_send,
+           y = "Number of email per topics",
+           x = "Study period")+
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      scale_color_manual(values = topic_colors,
+                         labels = topic_label)+
+      theme(legend.text.position = "bottom")
+
+  })
+
+  output$EnronWorkerSubjectRec <- renderPlot({
+
+    person_of_interest_reciveid_subject %>% filter(
+      year_month >= input$date_range_actor[1], #for year_month is greater than the min date in the range
+      year_month <= input$date_range_actor[2], #for year_month is smaller than the min date in the range
+      email_label_recipient == input$worker_choice_rec,
+      topic_email %in% names(topic_label[topic_label %in% input$subject_choice_actor]) #for selecting the topics
+      )%>%
+      ggplot(aes(year_month,value, color = topic_email))+
+      geom_line(size = 1) +
+      scale_x_date(date_labels = "%Y-%m", date_breaks = "3 months")+
+      labs(color = "Email subject and content topics",
+           title = input$worker_choice_rec,
+           y = "Number of email per topics",
+           x = "Study period")+
+      scale_color_manual(values = topic_colors,
+                         labels = topic_label)+
+      theme(legend.text.position = "bottom")
+
+  })
+
+
   }
 
 ### the App
