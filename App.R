@@ -3,6 +3,7 @@
 #libraries
 library(shinydashboard)
 library(shinyWidgets)
+library(bslib)
 library(shiny)
 library(tidyverse)
 library(circlize)
@@ -463,6 +464,7 @@ word_list <- list("message","origin","pleas","email","thank","attach","file","co
 #the theme for all the plot
 theme_set(theme_light())
 
+
 #### front end UI
 
 #dashboard of the Enron email analysis
@@ -473,12 +475,12 @@ ui <- dashboardPage(
   #the different page in the dashboard
   dashboardSidebar(
     sidebarMenu(id = "tabs",
-      menuItem("General", tabName = "dashboard", icon = icon("dashboard")),
-      menuItem("Email content analysis", tabName = "email", icon = icon("file-lines")),
-      menuItem("Email exchange per status", tabName = "workerExchange", icon = icon("envelope")),
-      menuItem("Email analyze per status", tabName = "status", icon = icon("business-time")),
-      menuItem("The most active Enron worker", tabName = "active", icon = icon("sun")),
-      menuItem("Potential fraud actor", tabName = "actor", icon = icon("circle-exclamation"))),
+                menuItem("General", tabName = "dashboard", icon = icon("dashboard")),
+                menuItem("Email content analysis", tabName = "email", icon = icon("file-lines")),
+                menuItem("Email exchange per status", tabName = "workerExchange", icon = icon("envelope")),
+                menuItem("Email analyze per status", tabName = "status", icon = icon("business-time")),
+                menuItem("The most active Enron worker", tabName = "active", icon = icon("sun")),
+                menuItem("Potential fraud actor", tabName = "actor", icon = icon("circle-exclamation"))),
     
     #design the side bar for the email tab
     conditionalPanel(
@@ -490,27 +492,27 @@ ui <- dashboardPage(
                      format = "yyyy-mm",
                      startview = "year"),
       selectizeInput(
-      "subject_choice", "Select the topic:",
-      choices = c("Business process email subject","Core Business email subject","Meeting email subject",
-                  "Enron Event email subject","Business process email","Core business email","Meeting email","Enron's event email"),
-      selected = c("Business process email subject","Core Business email subject","Meeting email subject",
-                   "Enron Event email subject","Business process email","Core business email","Meeting email","Enron's event email"),
-      multiple = TRUE)),
+        "subject_choice", "Select the topic:",
+        choices = c("Business process email subject","Core Business email subject","Meeting email subject",
+                    "Enron Event email subject","Business process email","Core business email","Meeting email","Enron's event email"),
+        selected = c("Business process email subject","Core Business email subject","Meeting email subject",
+                     "Enron Event email subject","Business process email","Core business email","Meeting email","Enron's event email"),
+        multiple = TRUE)),
     
-      conditionalPanel(#sidebar for the status tab
-        condition = "input.tabs == 'status'",
-        #date range slicer
-        dateRangeInput("date_range_status",
-                       label = "Select the period: ",
-                       start = min(email_subject_send$year_month),
-                       end = max(email_subject_send$year_month),
-                       format = "yyyy-mm",
-                       startview = "year"),
-        #status selector
-        selectizeInput(
-          "status_choice_status", "Select status:",
-          choices = unique(status_email_subject_send$status_sender),
-          selected = NULL),
+    conditionalPanel(#sidebar for the status tab
+      condition = "input.tabs == 'status'",
+      #date range slicer
+      dateRangeInput("date_range_status",
+                     label = "Select the period: ",
+                     start = min(email_subject_send$year_month),
+                     end = max(email_subject_send$year_month),
+                     format = "yyyy-mm",
+                     startview = "year"),
+      #status selector
+      selectizeInput(
+        "status_choice_status", "Select status:",
+        choices = unique(status_email_subject_send$status_sender),
+        selected = NULL),
       #topic selector
       selectizeInput(
         "subject_choice_status", "Select subject topic:",
@@ -519,7 +521,7 @@ ui <- dashboardPage(
         selected = c("Business process email subject","Core Business email subject","Meeting email subject",
                      "Enron Event email subject","Business process email","Core business email","Meeting email","Enron's event email"),
         multiple = TRUE)
-      ),
+    ),
     conditionalPanel(#sidebar for the actor tab
       condition = "input.tabs == 'actor'",
       #date range slicer
@@ -558,84 +560,85 @@ ui <- dashboardPage(
         tabName = "dashboard",
         fluidRow(width = 12,
                  box(width = 12,
-                   title = "Percentage of employee in the employee list with a know status",
-                   switchInput(inputId = "show_na", value = FALSE, label = "show NA"),
-                   plotOutput("NbWorker") 
+                     title = "Percentage of employee in the employee list with a know status",
+                     switchInput(inputId = "show_na", value = FALSE, label = "show NA"),
+                     plotOutput("NbWorker") 
                  )
-                 ),
+        ),
         br(),
-          fluidRow(width = 12,
-                   box(width = 12,
+        fluidRow(width = 12,
+                 box(width = 12,
                      title = "Key number",
                      fluidRow(width = 12,
                               valueBoxOutput("TotalEmail"),valueBoxOutput("PctgStatus"), valueBoxOutput("PctgGeneralAdd")),
                      fluidRow(width = 12,
                               valueBoxOutput("NbSend"),valueBoxOutput("NbRec"))
-        ))),
+                 ))),
       
       #2nd tab content
       tabItem(tabName = "workerExchange",
               fluidRow(
-              tabBox(width = 6,
-                title = "Email send and received visualization",
-                id = "tab1", 
-                tabPanel("Send", plotOutput("StatusSend")),
-                tabPanel("Received", plotOutput("StatusRec"))
-              ),
-              tabBox(width = 6,
-                title = "Email send and received descriptive statistics",
-                     id = "tab2",
-                     tabPanel("Statistic Send", tableOutput("StatSend")),
-                     tabPanel("Statistic Received", tableOutput("StatRec")))),
-      br(),
-      fluidRow(column(3, h4("Email exchange flux in 1999"), plotOutput("flux1999")),
-               column(3, h4("Email exchange flux in 2000"), plotOutput("flux2000")),
-               column(3, h4("Email exchange flux in 2002"), plotOutput("flux2001")),
-               column(3, h4("Email exchange flux in 2002"), plotOutput("flux2002")))
+                tabBox(width = 6,
+                       title = "Email send and received visualization",
+                       id = "tab1", 
+                       tabPanel("Send", plotOutput("StatusSend")),
+                       tabPanel("Received", plotOutput("StatusRec"))
+                ),
+                tabBox(width = 6,
+                       title = "Email send and received descriptive statistics",
+                       id = "tab2",
+                       tabPanel("Statistic Send", tableOutput("StatSend")),
+                       tabPanel("Statistic Received", tableOutput("StatRec")))),
+              br(),
+              fluidRow(column(3, h4("Email exchange flux in 1999"), plotOutput("flux1999")),
+                       column(3, h4("Email exchange flux in 2000"), plotOutput("flux2000")),
+                       column(3, h4("Email exchange flux in 2002"), plotOutput("flux2001")),
+                       column(3, h4("Email exchange flux in 2002"), plotOutput("flux2002")))
       ),
-
+      
       
       # 3rd tab content
       tabItem(tabName = "active",
               fluidRow(
                 tabBox(width = 12,
-                  id = "tab3",
+                       id = "tab3",
                        tabPanel("Send", plotOutput("Top10Send")),
                        tabPanel("Received", plotOutput("Top10Rec")))),
               fluidRow(
                 tabBox(width = 12, id = "tab4",
-                  tabPanel("Send", 
-                           fluidRow(
-                             column(width = 4, plotOutput("JeffStatusSendViz")), 
-                           column(width = 4, plotOutput("JeffWorkerSendViz")),
-                           column(width = 4, tableOutput("JeffSendStat")))),
-                  tabPanel("Received",
-                           fluidRow(
-                           column(width = 4, plotOutput("JeffRecViz")),
-                           column(width = 4, plotOutput("JeffWorkerRecViz")),
-                           column(width = 4, tableOutput("JeffRecStat")))))
+                       tabPanel("Send", 
+                                fluidRow(
+                                  column(width = 4, plotOutput("JeffStatusSendViz")), 
+                                  column(width = 4, plotOutput("JeffWorkerSendViz")),
+                                  column(width = 4, tableOutput("JeffSendStat")))),
+                       tabPanel("Received",
+                                fluidRow(
+                                  column(width = 4, plotOutput("JeffRecViz")),
+                                  column(width = 4, plotOutput("JeffWorkerRecViz")),
+                                  column(width = 4, tableOutput("JeffRecStat")))))
               )),
       
       #4th tab content
       tabItem(tabName = "email",
               fluidRow(tabBox(width = 12,
-                tabPanel("Send",plotOutput("EmailSend")),
-                tabPanel("Received",plotOutput("Emailrec"))
-                )),
-                fluidRow(tabBox(width = 12,
-                  tabPanel("Send",
-                           fluidRow(column(width = 8,
-                                           plotOutput("EmailSubjectSend")),
-                                    column(width = 4,
-                                           plotOutput("EmailWordSend")
-                                                                                    
-                                           ))),
-                  tabPanel("Received",
-                           fluidRow(column(width = 8,
-                                           plotOutput("EmailSubjectRec")),
-                                    column(width = 4,
-                                           plotOutput("EmailWordRec"))))))
-              ),
+                              tabPanel("Send",plotOutput("EmailSend")),
+                              tabPanel("Received",plotOutput("Emailrec"))
+              )),
+              fluidRow(tabBox(width = 12,
+                              tabPanel("Interactive study of the email send",
+                                       fluidRow(column(width = 8,
+                                                       plotOutput("EmailSubjectSend")),
+                                                column(width = 4,
+                                                       plotOutput("EmailWordSend")
+                                                       
+                                                ))),
+                              tabPanel("Interactive study of the email received",
+                                       fluidRow(column(width = 8,
+                                                       plotOutput("EmailSubjectRec")),
+                                                column(width = 4,
+                                                       plotOutput("EmailWordRec"))))))
+      ),
+      
       
       
       # 5th tab content
@@ -655,7 +658,7 @@ ui <- dashboardPage(
                        tabPanel("Send", 
                                 fluidRow(
                                   column(width = 8,
-                                    plotOutput("SubjectEmailSendStatus")),
+                                         plotOutput("SubjectEmailSendStatus")),
                                   column(width = 4,
                                          plotOutput("WordcloudSendStatus")))),
                        tabPanel("Received", 
@@ -664,25 +667,27 @@ ui <- dashboardPage(
                                          plotOutput("SubjectEmailRecStatus")),
                                   column(width = 4,
                                          plotOutput("WordcloudRecStatus"))))))
-              ),
+      ),
       
       # 6th tab content
       tabItem(tabName = "actor",
-                fluidRow(
-                  box(title = "Number of email send",
-                            plotOutput("EnronWorkerSend")
-                         ),
-                         box(title = "Number of email received",
-                             plotOutput("EnronWorkerRec")
-                         )),
+              fluidRow(
+                box(title = "Number of email send",
+                    plotOutput("EnronWorkerSend")
+                ),
+                box(title = "Number of email received",
+                    plotOutput("EnronWorkerRec")
+                )),
               fluidRow(
                 box(title = "Email send, subject and content analyze",
                     plotOutput("EnronWorkerSubjectSend")
                 ),
                 box(title = "Email received, subject and content analyze",
                     plotOutput("EnronWorkerSubjectRec")
-              ))
-    ))))
+                ))
+      ))))
+
+
     
   
 
@@ -1160,7 +1165,7 @@ server <- function(input, output){
            x = "Study period")
 
   })
-
+  
 
   output$EmailSubjectSend <- renderPlot({
     
