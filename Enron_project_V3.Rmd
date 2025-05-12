@@ -855,6 +855,7 @@ df_message_status %>% filter(!is.na(status_sender)) %>%
   ggplot(aes(status_sender, ratio_nb_email_pctg, fill = status_sender)) +
   geom_violin(trim = FALSE)+
   geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  stat_compare_means(method = "anova", label.y = 2500, size = 4)+
   labs(title = "Comparison of the number of emails sent based on the status of Enron workers",
        subtitle = "Ratio to the number of worker per group.",
        x = "Source",
@@ -923,6 +924,7 @@ ggplot(violin_worker, aes(as.factor(status_recipient), email_count, fill = as.fa
   geom_violin(trim = FALSE) +
   geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
   ylim(c(0,250))+
+  stat_compare_means(method = "anova", label.y = 250, size = 4)+
   labs(title = "Comparison of the number of emails received based on the status of Enron workers",
        x = "Source",
        y = "Email count per day") +
@@ -1160,7 +1162,7 @@ For the email exchange, we can see that:
 - The in-house lawyer exchanged emails in 2000 only with the manager/director and the CEO/president, but in 2001, they also exchanged with employees. The change in the email flow for the in-house lawyer might be related to the Enron event, where there could have been a need to inform employees about some matters so they could respond to SEC investigations.
 
 
-*This last analyze highlight the change in the email flux over the study period. Some change could be linked with the Enron event.*
+**This last analyze highlight the change in the email flux over the study period. Some change could be linked with the Enron event.**
 
 ##### The number of email send/receive per month over the year. 
 
@@ -1360,6 +1362,7 @@ p1 <- df_message_status %>%
 
 #Display the top 10 email address of recipient
 p2 <- df_message_status %>% filter(rtype == "TO") %>% #select only the email of the direct concerned receiver
+  distinct(sender, recipient, subject, .keep_all = TRUE) %>%
   group_by(recipient)%>% count() %>% #to count the number of email send per email address
   ungroup() %>%
   #calculate the percentage for each sender
@@ -1386,7 +1389,7 @@ p1 / p2
 
 ```
 
-Jeff Dasovitch seems to be the most active worker in Enron for email exchange where for the period of study it's him who send the higher proportion of email (3.2%) and received the highest proportion (0.51%). 
+Jeff Dasovitch seems to be the most active worker in Enron for email exchange where for the period of study it's him who send the higher proportion of email (3.1%) and received the highest proportion (0.61%). 
 
 ```{r}
 #return only one result from that query to get the status of the most active sender/recipient
@@ -1489,7 +1492,7 @@ The table summarizing the emails sent by the group shows us that:
 
 - Surprisingly, when we look at all the senders, we find the highest number of emails sent in a day. Maybe that is linked to the Enron event.
 
-*From this we can deduce that, Jeff Dasovitch is significantly the most active Enron's worker in the email sending. *
+**From this we can deduce that, Jeff Dasovitch is significantly the most active Enron's worker in the email sending. **
 
 Then we look at the email received by Jeff Dasovitch compared to Enron's worker of the same status and to all Enron's worker.
 ```{r}
@@ -1570,15 +1573,15 @@ violin_plot %>% group_by(source) %>%
 
 When we look at the number of emails received, Jeff Dasovich received significantly more emails on average than another Enron worker. However, when compared to other employees, he did not receive more emails than some others. On the contrary, he received significantly fewer than some. For the Enron workers, the mean is far from the median, suggesting that extreme values exist within that group. The violin plot for the employees highlights this, where we can see that above the 3rd quartile, there is a long tail starting around 120 and becoming extremely thin after 250. Conversely, for Jeff Dasovich's violin plot, above the 3rd quartile, the tail does not become finer but seems to consistently have a significant number of observations with these high values. All of this suggests that for the employees, some events caused them to receive an extremely high number of emails, a peak that is not seen for Jeff Dasovich.
 
-*From this part of the analyze we can say that: *
+**From this part of the analyze we can say that: **
 
-*- Jeff Dasovich is the Enron worker who send and received the highest number of email.*
+**- Jeff Dasovich is the Enron worker who send and received the highest number of email.**
 
-*- Compared to other worker with an employee status he significantly send more email but he received less.*
+**- Compared to other worker with an employee status he significantly send more email but he received less.**
 
-*- It is possible that, it has some events whose made other employee than Jeff Dasovich receiving more email in one day. We could thing Jeff Dasovich is one of the employee who receive the most email per day but not the only one.*
+**- It is possible that, it has some events whose made other employee than Jeff Dasovich receiving more email in one day. We could thing Jeff Dasovich is one of the employee who receive the most email per day but not the only one.**
 
-*We can conclude that Jeff Dasovich is more active than passive in the email exchange and is the sender with the highest number of emails per day during the study period.*
+**We can conclude that Jeff Dasovich is more active than passive in the email exchange and is the sender with the highest number of emails per day during the study period.**
 
 ### Analyze of the email subject and content
 
@@ -1706,6 +1709,7 @@ email_subject_send_graph %>% select(year_month, starts_with("sum_subject_")) %>%
     values = topic_colors[1:4],
     labels = topic_label[1:4])
 ```
+
 We can see that:
 
 - The top topic is about the meeting; then we have the business process and the business core.
@@ -1916,7 +1920,7 @@ email_subject_rec_graph %>% select(year_month, starts_with("sum_email_")) %>%
 
 For the email received about those topics/keywords we see a similar pattern than the email send suggesting their are exchange. 
 
-*To go deeper in the email content analysis we next look at the topics and key words find in function of the worker status.*
+**To go deeper in the email content analysis we next look at the topics and key words find in function of the worker status.**
 
 For that we create a similar data frame than the previous but by making the count of topics/email in function of the employee status.
 ```{r}
@@ -2268,7 +2272,7 @@ title(main = paste0("Top 10 words in the email received by ",status), col.main =
 
 In the emails received, the top 10 words fall into the same topic categories as those in the sent emails. For the CEO, we observe more words about meetings compared to business matters in their top 10. This suggests that the CEO is well-informed about the content of the meetings, such as reports on various topics, but tends to give directions for the core business processes. This is logical given their position.
 
-*This analysis highlights that in the emails where the subject and/or text contains the words we searched for, associated with specific topics, the top words are related to meetings. This makes sense when we see the peak of those topics for each status. We could infer that these email exchanges are related to meetings for managing the Enron event as well as the business aspects of the company.*
+**This analysis highlights that in the emails where the subject and/or text contains the words we searched for, associated with specific topics, the top words are related to meetings. This makes sense when we see the peak of those topics for each status. We could infer that these email exchanges are related to meetings for managing the Enron event as well as the business aspects of the company.**
 
 ```{r}
 #global environment cleaning
@@ -2358,14 +2362,16 @@ person_of_interest_reciveid <- email_subject_rec %>%
 
 
 We look at the number of email send/received for each person studied:
-The email send
+
+The email send each month:
 ```{r}
 #create a list with the name of each person we want to study
 enron_worker_send <- unique(person_of_interest_send$email_label_sender)
   
-  #loop allowing to construct a bar plot to display per month the number of email send by each person study
+#initiate the list to store the plot  
 worker_send_plot <- list()
 
+#loop allowing to construct a bar plot to display per month the number of email send by each person study
 for(i in seq(enron_worker_send)){
   
   worker <- enron_worker_send[i]
@@ -2392,7 +2398,7 @@ for(i in seq(enron_worker_send)){
 worker_send_plot
 ```
 
-The email received:
+The email received each month:
 ```{r}
 #liste of person study
 enron_worker_rec <- unique(person_of_interest_reciveid$email_label_recipient)
@@ -2756,11 +2762,11 @@ print(verify <- inner_join(no_extern, Enron_subject, by = "subject"))
   
 We can see that 2 subject are find in the external and the data set which look only at the exchange involving person with an enron email address. Those email are send in december 2001 and January 2002, one is from the CEO david foster and is about enron online document, the second is from a louise at enron and is related to an article about the bankruptcy at enron. We can think that, those email had involved person whose are external too the enron company and have spread those information outside the company.
 
-*To conclude on the project, we can say that:*
-*The Enron company is composed of different statuses which seem to have varying degrees of involvement in the fiscal fraud. The person at the head of the company, as well as the traders and the lawyers, seem to be active participants in the fraud. The other statuses seem to be more aware of it, perhaps not playing a significant role in it.*
-*By looking at the people known to be involved in the Enron fiscal fraud, we do not identify many emails sent or received about it, nor about the management of the bankruptcy or the SEC investigation. We can assume they used other means of communication. Given the time, they might have communicated more by phone than email.*
-*A brief investigation about potential external exchanges shows that other companies in the US spoke about the Enron event and two emails are directly associated with company internal exchanges.*
-*It could be interesting to investigate the email content further by having a more exhaustive dataset about them. This will enhance the knowledge of the Enron event as well as the implication of the different statuses in them.*
+**To conclude on the project, we can say that:**
+**The Enron company is composed of different statuses which seem to have varying degrees of involvement in the fiscal fraud. The person at the head of the company, as well as the traders and the lawyers, seem to be active participants in the fraud. The other statuses seem to be more aware of it, perhaps not playing a significant role in it.**
+**By looking at the people known to be involved in the Enron fiscal fraud, we do not identify many emails sent or received about it, nor about the management of the bankruptcy or the SEC investigation. We can assume they used other means of communication. Given the time, they might have communicated more by phone than email.**
+**A brief investigation about potential external exchanges shows that other companies in the US spoke about the Enron event and two emails are directly associated with company internal exchanges.**
+**It could be interesting to investigate the email content further by having a more exhaustive dataset about them. This will enhance the knowledge of the Enron event as well as the implication of the different statuses in them.**
 
 
 
