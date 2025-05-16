@@ -701,6 +701,7 @@ ui <- dashboardPage(
       
       # 6th tab content
       tabItem(tabName = "actor",
+              fluidRow(
               column(width = 6,
                 tabBox(width = 12, title = "worker 1",
                   tabPanel("Sent",
@@ -732,11 +733,9 @@ ui <- dashboardPage(
                                     )),
                                     fluidRow(box(width=12, title = "Email received, subject and text analyze",
                                         plotOutput("EnronWorkerSubjectRec_tab2")
-                                    ))))) )
+                                    ))))) ))
       )))
-
-
-    
+ 
   
 
 ### Back-end server

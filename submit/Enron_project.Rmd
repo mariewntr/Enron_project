@@ -675,17 +675,17 @@ cbind(c1, c2)
 
 ```
 
-This highlights that more than half of the senders and recipients do not have an email address with an Enron domain. This suggests that the email exchanges may be more between Enron employees and the company's clients. It is also possible that the emails are sent to or from personal email addresses of Enron employees, perhaps in the case of informal exchanges.   
+This highlights that more than half of the senders and recipients do not have an email address with an Enron domain. This suggests that the email exchanges may be more between Enron employees and the company's clients. It is also possible that the emails are sent to or from personal email addresses of Enron employees, maybe in the case of informal exchanges.   
 
 From this initial overview of the data, we can deduce that:
 
 - The dataset we have is not exhaustive regarding the status of employees in the company as well as the content of the emails.
 
-- A lot of exchanges are conducted with external workers. Perhaps most of the exchanges involve Enron employees where less than 10% of the emails are sent to or from addresses without an Enron domain. 
+- A lot of exchanges are conducted with external persons. But most of the exchanges involve Enron employees where less than 10% of the emails are sent to or from addresses without an Enron domain. 
 
 -	It seems that few emails are real exchanges between employees, as we have few emails containing "RE:" in their subject.
 
-- •	A small part of the email exchanges seems to be between people who are external to the Enron company. Although they represent a negligible part of the total dataset, we will keep them in the dataset for further analysis. 
+-	A small part of the email exchanges seems to be between people who are external to the Enron company. Although they represent a negligible part of the total dataset, we will keep them in the dataset for further analysis. 
 
 Given this, we decide to include the employees without status to avoid losing any information about the email exchanges and to keep the external email addresses for the analysis.
 
@@ -1062,10 +1062,7 @@ We can see that, it as in average more person in a group who receive email each 
 
 **In general, it is the employees who are more active in email exchanges. When we rationalize the number of emails sent in relation to the number of workers per group, we can see that employees are really the most active in sending emails, but at some point, the CEO group sent a high number of emails due to Enron's events. If we look at the number of emails received in relation to the number of workers in a group, we see no real difference between the groups, suggesting that more people receive emails each day than send them**
 
-Next we take a look at the flux of the email exchange between the different status over the study period to see if it change.
-
-We now look if along the year it as a change in the interaction between the Enron's worker with a knowing status.
-For that per year we draw chord diagram which allows to follow the links between group.
+Next we take a look at the flux of the email exchange between the different status over the study period to see if it change because of the enron company events. We now look at the exchange between worker with a knowing status in the company and per year we draw chord diagram which allows to follow the emails flux between group.
 
 ```{r}
 #plot for each year follow the exchange between group
@@ -1322,7 +1319,7 @@ The plot above shows that:
 
 - The traders seem to receive more emails than they send.
 
-- For the group at the head of the company (CEO, Managing Director, Director, President, and Vice President), the number of emails received follows the Enron's fiscal fraud event with high peaks in April, May, October, and November of 2001.
+- For the group at the head of the company (CEO, Managing Director, Director, President, and Vice President), the number of emails received follows the Enron's fiscal fraud event with high spikes in April, May, October, and November of 2001.
 
 - In 2001, the Vice President group received a lot of emails compared to the other head groups of the company.
 
@@ -1335,255 +1332,6 @@ rm(jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_pl
 ```
 
 
-Now we try to see who is the most active in the email exchange.
-For that, we start by counting the number of email send per each worker and return the 10 persons who send the highest number.
-```{r}
-#Display the top 10 email address of sender
-p1 <- df_message_status %>% 
-  #keep distinct exchange
-  distinct(sender, subject, recipient, .keep_all = TRUE) %>%
-  group_by(sender)%>% count() %>% #to count the number of email send per email address
-  ungroup() %>%
-  #calculate the percentage for each sender
-  mutate(perc = round(`n`/sum(`n`),3),
-  labels = scales::percent(perc)) %>% 
-  arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
-  #bar chart
-  ggplot(aes(reorder(sender, perc, sum), perc, fill = sender)) +
-  geom_bar(stat="identity") +
-  coord_flip() +
-  #graph title and label
-  geom_text(aes(label = labels), vjust = 0.5, size = 4) + #display the percentage for each category at the end of the corresponding bar
-  scale_y_continuous(labels = scales::percent_format())+  
-  labs(title = "Top 10 Enron's employee email sender")+
-  xlab("Employee's email address")+
-  ylab("Email sent per sender (%)") +
-  scale_fill_brewer(palette = "Set3")+
-    theme(legend.position = "none",
-        plot.margin = margin(10, 10, 10, 20))
-
-#Display the top 10 email address of recipient
-p2 <- df_message_status %>% filter(rtype == "TO") %>% #select only the email of the direct concerned receiver
-  distinct(sender, recipient, subject, .keep_all = TRUE) %>%
-  group_by(recipient)%>% count() %>% #to count the number of email send per email address
-  ungroup() %>%
-  #calculate the percentage for each sender
-  mutate(perc = round(`n`/sum(`n`),4),
-  labels = scales::percent(perc)) %>% 
-  arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
-  #bar chart
-  ggplot(aes(reorder(recipient, perc, sum), perc, fill = recipient)) +
-  geom_bar(stat="identity") +
-  coord_flip() +
-  #graph title and label
-  geom_text(aes(label = labels), vjust = 0.5, size = 4) + #display the percentage for each category at the end of the corresponding bar
-  scale_y_continuous(labels = scales::percent_format())+ 
-  labs(title = "Top 10 Enron's employee email receiver",
-       subtitle = "Only principal receiver")+
-  xlab("Employee's email address")+
-  ylab("Email received per recipient (%)") +
-  scale_fill_brewer(palette = "Set3")+
-  theme(legend.position = "none",
-        plot.margin = margin(10, 10, 10, 20))
-
-#arrange the plot on the same place
-p1 / p2
-
-```
-
-Jeff Dasovitch seems to be the most active worker in Enron for email exchange where for the period of study it's him who send the higher proportion of email (3.1%) and received the highest proportion (0.61%). 
-
-```{r}
-#return only one result from that query to get the status of the most active sender/recipient
-head(df_message_status[df_message_status$sender == "jeff.dasovich@enron.com", "status_sender"], 
-     n=1)
-```
-In the employee data set he is described to be an Employee of Enron. To see if it is really the most active we will compared the number of email send and received by him to the other worker with the same status (Employee) and to all the worker of Enron company. 
-
-##### Compared the number of email sent by the worker who seems to be the more active (Jeff Dasovich), by all worker of it's status (Employee), and all Enron's worker. 
-
-For that we will compute descriptive comparative statistic between them.
-```{r}
-#count the number of email send by jeff dasovich per day
-jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
-  #we count the number of different email subject send per day
-  group_by(date, subject) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
-
-#count the number of email send by all sender per day
-sender_stat <- df_message_status %>% 
-  #we count the number of different email subject send per day by each sender
-  group_by(date, sender, subject) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "All sender") %>% select(-sender) %>% transform(source = as.factor(source))
-
-#count the number of email send by Employee status per day
-statuts_stat_send <- df_message_status %>% filter(status_sender == "Employee") %>% 
-  #we count the number of different email subject send per day by each sender of status employee
-  group_by(date, sender, subject) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Employee status") %>% transform(source = as.factor(source))
-
-#combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
-violin_plot1 <- bind_rows(jeff_stat_send, statuts_stat_send)
-violin_plot2 <- bind_rows(jeff_stat_send, sender_stat)
-
-#compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee 
-p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
-  #display the comparative statistic on the violin plot
-  stat_compare_means(method = "t.test", label.y = max(violin_plot1$email_count) - 400)+
-  labs(title = "Comparison of the email sent between 
-       Jeff Dasovitch and the Enron's Employee",
-       x = "Source",
-       y = "Number of emails") +
-  #to better see the violin plot we break the y axis
-  scale_y_break(c(100, 3000), scales = 0.3)+
-  #set up the color for each resources
-  scale_fill_manual(values = c(
-      "Jeff Dasovich" = "tomato2",
-      "Employee status" = "yellowgreen"))+
-  #withdraw the legend form the plot
-  theme(legend.position = "none")
-
-#same plot but to compared Jeff Dasovitch to the Enron's worker
-p4 <- ggplot(violin_plot2, aes(as.factor(source), email_count, fill = as.factor(source))) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
-  stat_compare_means(method = "t.test", label.y = max(violin_plot2$email_count) - 2000)+
-  scale_y_break(c(250, 15000), scales = 0.3)+
-  labs(title = "Comparison of the email sent between 
-       Jeff Dasovitch and all sender",
-       x = "Source",
-       y = "Number of emails") +
-  scale_fill_manual(#set up the color for each resources
-    values = c(
-      "Jeff Dasovich" = "tomato2",
-      "All sender" = "cyan"))+
-  theme(legend.position = "none")
-
-#arrange the plot on the same place
-p3 + p4
-
-```
-
-```{r}
-#display the stat of the different group
-violin_plot <- bind_rows(jeff_stat_send, sender_stat, statuts_stat_send)
-
-#Description of the email send by Jeff Dasovich, the Employee, and all
-violin_plot %>% group_by(source)%>%
-  summarise(
-    mean = mean(email_count),
-    sd = sd(email_count),
-    min = min(email_count),
-    Q1 = quantile(email_count, 0.25),
-    Q3 = quantile(email_count, 0.75),
-    max = max(email_count)
-  )
-
-```
-
-The table summarizing the emails sent by the group shows us that:
-
-- It is Jeff Dasovitch who has the highest average number of emails sent per day. The lowest is for the Enron employees.
-
-- By looking at the quantiles, which represent respectively the 25% and the 75% of the values, it is also Jeff who has the highest value for quantile 3, especially compared to the Enron employees.
-
-- Surprisingly, when we look at all the senders, we find the highest number of emails sent in a day. Maybe that is linked to the Enron event.
-
-**From this we can deduce that, Jeff Dasovitch is significantly the most active Enron's worker in the email sending. **
-
-Then we look at the email received by Jeff Dasovitch compared to Enron's worker of the same status and to all Enron's worker.
-```{r}
-#statistics on the jeff dasovich email receive per day
-jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
-  group_by(date) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
-
-#statistics on the email send per day by all the recipient
-recipient_stat <- df_message_status %>% group_by(date, recipient) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Enron's worker") %>% select(-recipient) %>% transform(source = as.factor(source))
-
-#statistics on the email send per day by the enron's worker who have an employee statuts
-statuts_stat_rec <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
-  summarise(email_count = n(), .groups = "drop") %>%
-  mutate(source = "Employee status") %>% transform(source = as.factor(source))
-
-#combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
-violin_plot1 <- bind_rows(jeff_stat_rec, statuts_stat_rec)
-violin_plot2 <- bind_rows(jeff_stat_rec, recipient_stat)
-
-#compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee and/or worker in Enron's company
-p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
-  #compared statisticaly the 2 group to see if the difference is significant or not
-  stat_compare_means(method = "t.test", label.y = max(violin_plot1$email_count) + 2)+
-  labs(title = "Comparison of the email received between 
-       Jeff Dasovitch and the Enron's Employee",
-       x = "Source",
-       y = "Number of emails") +
-  theme(legend.position = "none")+
-  scale_fill_manual(#set up the color for each resources
-    values = c(
-      "Jeff Dasovich" = "tomato2",
-      "Employee status" = "yellowgreen"
-    ))
-
-p4 <- ggplot(violin_plot2, aes(as.factor(source), email_count, fill = as.factor(source))) +
-  geom_violin(trim = FALSE) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
-  ylim(c(-10,350))+
-  stat_compare_means(method = "t.test", label.y = 300)+
-  labs(title = "Comparison of the email received between 
-       Jeff Dasovitch and all recipient",
-       x = "Source",
-       y = "Number of emails") +
-  theme(legend.position = "none")+
-  scale_fill_manual(#set up the color for each resources
-    values = c(
-      "Jeff Dasovich" = "tomato2",
-      "All recipient" = "cyan"
-    ))
-
-#arrange the plot on the same place
-p3 + p4
-
-```
-
-```{r}
-violin_plot <- bind_rows(jeff_stat_rec, recipient_stat, statuts_stat_rec)
-
-#Description of the email received 
-violin_plot %>% group_by(source) %>%
-  summarise(
-    mean = mean(email_count),
-    median = median(email_count),
-    sd = sd(email_count),
-    min = min(email_count),
-    Q1 = quantile(email_count, 0.25),
-    Q3 = quantile(email_count, 0.75),
-    max = max(email_count)
-  )
-
-```
-
-When we look at the number of emails received, Jeff Dasovich received significantly more emails on average than another Enron worker. However, when compared to other employees, he did not receive more emails than some others. On the contrary, he received significantly fewer than some. For the Enron workers, the mean is far from the median, suggesting that extreme values exist within that group. The violin plot for the employees highlights this, where we can see that above the 3rd quartile, there is a long tail starting around 120 and becoming extremely thin after 250. Conversely, for Jeff Dasovich's violin plot, above the 3rd quartile, the tail does not become finer but seems to consistently have a significant number of observations with these high values. All of this suggests that for the employees, some events caused them to receive an extremely high number of emails, a peak that is not seen for Jeff Dasovich.
-
-**From this part of the analyze we can say that: **
-
-**- Jeff Dasovich is the Enron worker who send and received the highest number of email.**
-
-**- Compared to other worker with an employee status he significantly send more email but he received less.**
-
-**- It is possible that, it has some events whose made other employee than Jeff Dasovich receiving more email in one day. We could thing Jeff Dasovich is one of the employee who receive the most email per day but not the only one.**
-
-**We can conclude that Jeff Dasovich is more active than passive in the email exchange and is the sender with the highest number of emails per day during the study period.**
 
 ### Analysis of the email subject and content
 
@@ -2281,6 +2029,257 @@ In the emails received, the top 10 words fall into the same topic categories as 
 
 **This analysis highlights that in the emails where the subject and/or text contains the words we searched for, associated with specific topics, the top words are related to meetings. This makes sense when we see the peak of those topics for each status. We could infer that these email exchanges are related to meetings for managing the Enron event as well as the business aspects of the company.**
 
+The next is to find the person in the company who is the most active in the email exchange. For that, we start by counting the number of email send per each worker and return the 10 persons who send the highest number.
+
+```{r}
+#Display the top 10 email address of sender
+p1 <- df_message_status %>% 
+  #keep distinct exchange
+  distinct(sender, subject, recipient, .keep_all = TRUE) %>%
+  group_by(sender)%>% count() %>% #to count the number of email send per email address
+  ungroup() %>%
+  #calculate the percentage for each sender
+  mutate(perc = round(`n`/sum(`n`),3),
+  labels = scales::percent(perc)) %>% 
+  arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
+  #bar chart
+  ggplot(aes(reorder(sender, perc, sum), perc, fill = sender)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  #graph title and label
+  geom_text(aes(label = labels), vjust = 0.5, size = 4) + #display the percentage for each category at the end of the corresponding bar
+  scale_y_continuous(labels = scales::percent_format())+  
+  labs(title = "Top 10 Enron's employee email sender")+
+  xlab("Employee's email address")+
+  ylab("Email sent per sender (%)") +
+  scale_fill_brewer(palette = "Set3")+
+    theme(legend.position = "none",
+        plot.margin = margin(10, 10, 10, 20))
+
+#Display the top 10 email address of recipient
+p2 <- df_message_status %>% filter(rtype == "TO") %>% #select only the email of the direct concerned receiver
+  distinct(sender, recipient, subject, .keep_all = TRUE) %>%
+  group_by(recipient)%>% count() %>% #to count the number of email send per email address
+  ungroup() %>%
+  #calculate the percentage for each sender
+  mutate(perc = round(`n`/sum(`n`),4),
+  labels = scales::percent(perc)) %>% 
+  arrange(desc(n)) %>% head(10) %>% #to get only the 10 email address with the most important number of email send
+  #bar chart
+  ggplot(aes(reorder(recipient, perc, sum), perc, fill = recipient)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  #graph title and label
+  geom_text(aes(label = labels), vjust = 0.5, size = 4) + #display the percentage for each category at the end of the corresponding bar
+  scale_y_continuous(labels = scales::percent_format())+ 
+  labs(title = "Top 10 Enron's employee email receiver",
+       subtitle = "Only principal receiver")+
+  xlab("Employee's email address")+
+  ylab("Email received per recipient (%)") +
+  scale_fill_brewer(palette = "Set3")+
+  theme(legend.position = "none",
+        plot.margin = margin(10, 10, 10, 20))
+
+#arrange the plot on the same place
+p1 / p2
+
+```
+
+Jeff Dasovitch seems to be the most active worker in Enron for email exchange where for the period of study it's him who send the higher proportion of email (3.1%) and received the highest proportion (0.61%). 
+
+```{r}
+#return only one result from that query to get the status of the most active sender/recipient
+head(df_message_status[df_message_status$sender == "jeff.dasovich@enron.com", "status_sender"], 
+     n=1)
+```
+In the employee data set he is described to be an Employee of Enron. To see if it is really the most active we will compared the number of email send and received by him to the other worker with the same status (Employee) and to all the worker of Enron company. 
+
+##### Compared the number of email sent by the worker who seems to be the more active (Jeff Dasovich), by all worker of it's status (Employee), and all Enron's worker. 
+
+For that we will compute descriptive comparative statistic between them.
+```{r}
+#count the number of email send by jeff dasovich per day
+jeff_stat_send <- df_message_status %>% filter(sender == "jeff.dasovich@enron.com") %>%
+  #we count the number of different email subject send per day
+  group_by(date, subject) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+
+#count the number of email send by all sender per day
+sender_stat <- df_message_status %>% 
+  #we count the number of different email subject send per day by each sender
+  group_by(date, sender, subject) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "All sender") %>% select(-sender) %>% transform(source = as.factor(source))
+
+#count the number of email send by Employee status per day
+statuts_stat_send <- df_message_status %>% filter(status_sender == "Employee") %>% 
+  #we count the number of different email subject send per day by each sender of status employee
+  group_by(date, sender, subject) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Employee status") %>% transform(source = as.factor(source))
+
+#combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
+violin_plot1 <- bind_rows(jeff_stat_send, statuts_stat_send)
+violin_plot2 <- bind_rows(jeff_stat_send, sender_stat)
+
+#compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee 
+p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  #display the comparative statistic on the violin plot
+  stat_compare_means(method = "t.test", label.y = max(violin_plot1$email_count) - 400)+
+  labs(title = "Comparison of the email sent between 
+       Jeff Dasovitch and the Enron's Employee",
+       x = "Source",
+       y = "Number of emails") +
+  #to better see the violin plot we break the y axis
+  scale_y_break(c(100, 3000), scales = 0.3)+
+  #set up the color for each resources
+  scale_fill_manual(values = c(
+      "Jeff Dasovich" = "tomato2",
+      "Employee status" = "yellowgreen"))+
+  #withdraw the legend form the plot
+  theme(legend.position = "none")
+
+#same plot but to compared Jeff Dasovitch to the Enron's worker
+p4 <- ggplot(violin_plot2, aes(as.factor(source), email_count, fill = as.factor(source))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  stat_compare_means(method = "t.test", label.y = max(violin_plot2$email_count) - 2000)+
+  scale_y_break(c(250, 15000), scales = 0.3)+
+  labs(title = "Comparison of the email sent between 
+       Jeff Dasovitch and all sender",
+       x = "Source",
+       y = "Number of emails") +
+  scale_fill_manual(#set up the color for each resources
+    values = c(
+      "Jeff Dasovich" = "tomato2",
+      "All sender" = "cyan"))+
+  theme(legend.position = "none")
+
+#arrange the plot on the same place
+p3 + p4
+
+```
+
+```{r}
+#display the stat of the different group
+violin_plot <- bind_rows(jeff_stat_send, sender_stat, statuts_stat_send)
+
+#Description of the email send by Jeff Dasovich, the Employee, and all
+violin_plot %>% group_by(source)%>%
+  summarise(
+    mean = mean(email_count),
+    sd = sd(email_count),
+    min = min(email_count),
+    Q1 = quantile(email_count, 0.25),
+    Q3 = quantile(email_count, 0.75),
+    max = max(email_count)
+  )
+
+```
+
+The table summarizing the emails sent by the group shows us that:
+
+- It is Jeff Dasovitch who has the highest average number of emails sent per day. The lowest is for the Enron employees.
+
+- By looking at the quantiles, which represent respectively the 25% and the 75% of the values, it is also Jeff who has the highest value for quantile 3, especially compared to the Enron employees.
+
+- Surprisingly, when we look at all the senders, we find the highest number of emails sent in a day. Maybe that is linked to the Enron event.
+
+**From this we can deduce that, Jeff Dasovitch is significantly the most active Enron's worker in the email sending. **
+
+Then we look at the email received by Jeff Dasovitch compared to Enron's worker of the same status and to all Enron's worker.
+```{r}
+#statistics on the jeff dasovich email receive per day
+jeff_stat_rec <- df_message_status %>% filter(recipient == "jeff.dasovich@enron.com") %>%
+  group_by(date) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Jeff Dasovich") %>% transform(source = as.factor(source))
+
+#statistics on the email send per day by all the recipient
+recipient_stat <- df_message_status %>% group_by(date, recipient) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Enron's worker") %>% select(-recipient) %>% transform(source = as.factor(source))
+
+#statistics on the email send per day by the enron's worker who have an employee statuts
+statuts_stat_rec <- df_message_status %>% filter(status_recipient == "Employee") %>% group_by(date) %>% 
+  summarise(email_count = n(), .groups = "drop") %>%
+  mutate(source = "Employee status") %>% transform(source = as.factor(source))
+
+#combine the rows together to create a unique dataframe and compared the enron's worker and the employee to Jeff
+violin_plot1 <- bind_rows(jeff_stat_rec, statuts_stat_rec)
+violin_plot2 <- bind_rows(jeff_stat_rec, recipient_stat)
+
+#compared the 2 groups per a t.test to see if jeff dasovitch is really most active than the other employee and/or worker in Enron's company
+p3 <- ggplot(violin_plot1, aes(as.factor(source), email_count, fill = as.factor(source))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  #compared statisticaly the 2 group to see if the difference is significant or not
+  stat_compare_means(method = "t.test", label.y = max(violin_plot1$email_count) + 2)+
+  labs(title = "Comparison of the email received between 
+       Jeff Dasovitch and the Enron's Employee",
+       x = "Source",
+       y = "Number of emails") +
+  theme(legend.position = "none")+
+  scale_fill_manual(#set up the color for each resources
+    values = c(
+      "Jeff Dasovich" = "tomato2",
+      "Employee status" = "yellowgreen"
+    ))
+
+p4 <- ggplot(violin_plot2, aes(as.factor(source), email_count, fill = as.factor(source))) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, color = "white")+
+  ylim(c(-10,350))+
+  stat_compare_means(method = "t.test", label.y = 300)+
+  labs(title = "Comparison of the email received between 
+       Jeff Dasovitch and all recipient",
+       x = "Source",
+       y = "Number of emails") +
+  theme(legend.position = "none")+
+  scale_fill_manual(#set up the color for each resources
+    values = c(
+      "Jeff Dasovich" = "tomato2",
+      "All recipient" = "cyan"
+    ))
+
+#arrange the plot on the same place
+p3 + p4
+
+```
+
+```{r}
+violin_plot <- bind_rows(jeff_stat_rec, recipient_stat, statuts_stat_rec)
+
+#Description of the email received 
+violin_plot %>% group_by(source) %>%
+  summarise(
+    mean = mean(email_count),
+    median = median(email_count),
+    sd = sd(email_count),
+    min = min(email_count),
+    Q1 = quantile(email_count, 0.25),
+    Q3 = quantile(email_count, 0.75),
+    max = max(email_count)
+  )
+
+```
+
+When we look at the number of emails received, Jeff Dasovich received significantly more emails on average than another Enron worker. However, when compared to other employees, he did not receive more emails than some others. On the contrary, he received significantly fewer than some. For the Enron workers, the mean is far from the median, suggesting that extreme values exist within that group. The violin plot for the employees highlights this, where we can see that above the 3rd quartile, there is a long tail starting around 120 and becoming extremely thin after 250. Conversely, for Jeff Dasovich's violin plot, above the 3rd quartile, the tail does not become finer but seems to consistently have a significant number of observations with these high values. All of this suggests that for the employees, some events caused them to receive an extremely high number of emails, a peak that is not seen for Jeff Dasovich.
+
+**From this part of the analyze we can say that: **
+
+**- Jeff Dasovich is the Enron worker who send and received the highest number of email.**
+
+**- Compared to other worker with an employee status he significantly send more email but he received less.**
+
+**- It is possible that, it has some events whose made other employee than Jeff Dasovich receiving more email in one day. We could thing Jeff Dasovich is one of the employee who receive the most email per day but not the only one.**
+
+**We can conclude that Jeff Dasovich is more active than passive in the email exchange and is the sender with the highest number of emails per day during the study period.**
+
+
 ```{r}
 #global environment cleaning
 rm(grid_plot, i, j, n, no_legend, p, p3, p4, plot_list, plot_on_the_page, plot_per_section, plots_with_legend, status, status_list,
@@ -2288,7 +2287,7 @@ rm(grid_plot, i, j, n, no_legend, p, p3, p4, plot_list, plot_on_the_page, plot_p
 ```
 
 
-On the Enron scandal wikipedia page we find a list of person involved in the Enron scandal. 
+In addition, on the Enron scandal wikipedia page we find a list of person involved in the Enron scandal. 
 We will research them in the data set to see if we can analyse the subject of the email they send as well as if they play a role in the Enron scandal. 
 source: [wikipedia page about Enron timeline downfall](https://en.wikipedia.org/wiki/Enron_scandal#Timeline_of_downfall).
 
@@ -2318,7 +2317,7 @@ From this list we add Jeff Dasovich who isn't find in the wikipedia page but we 
 ```{r}
 #to find the person involved in the fiscal fraud we use str_detect to see if we can find them in the data set
 #for example here for Vincent Kaminski
-people_of_interest <- df_message_status%>% filter(str_detect(sender,"kaminski"))
+people_of_interest <- df_message_status %>% filter(str_detect(sender,"kaminski"))
 ```
 
 First we construct the data set for the email send and received by each Enron worker know for being involved in the fraud.
@@ -2339,8 +2338,8 @@ person_of_interest_send <- email_subject_send %>%
       sender %in% c("vkaminski@enron.com", "vkaminski@aol.com", "vkaminski@palm.net") ~ "Vincent Kaminski",
       sender == "jordan.mintz@enron.com" ~ "Jordan Mintz",
       sender == "sherron.watkins@enron.com" ~ "Sherron Watkins",
-      sender == "richard.causey@enron.com" ~ "Richard Causey", #chief account officer wikipedia source
-      sender == "greg.whalley@enron.com" ~ "Greg Whalley", #president and COO of Enron wholesale service
+      sender == "richard.causey@enron.com" ~ "Richard Causey", 
+      sender == "greg.whalley@enron.com" ~ "Greg Whalley", 
       .default = sender))
 
 #email received
@@ -2361,8 +2360,8 @@ person_of_interest_reciveid <- email_subject_rec %>%
                          "vkaminski@ol.com", "vkaminski@aol .com", "vkaminski@aol .com") ~ "Vincent Kaminski",
         recipient %in% c("jordan.mintz@enron.com","jordan_mintz@enron.com") ~ "Jordan Mintz",
         recipient == "sherron.watkins@enron.com" ~ "Sherron Watkins",
-        recipient == "richard.causey@enron.com" ~ "Richard Causey", #chief account officer wikipedia source
-        recipient == "greg.whalley@enron.com" ~ "Greg Whalley", #president and COO of Enron wholesale service
+        recipient == "richard.causey@enron.com" ~ "Richard Causey", 
+        recipient == "greg.whalley@enron.com" ~ "Greg Whalley", 
         .default = recipient)) 
 
 ```
@@ -2541,11 +2540,11 @@ for (i in seq(1, n, by=plot_per_section)){
 
 We can see that:
 
-- Jeff Dasovich is the most active Enron worker in this shortlist for sending emails. He sends emails about all topics, especially meetings and various business aspects. He could be one of the employees involved in different events and/or managing them. Perhaps he holds a high level of responsibility within the company.
+- Jeff Dasovich is the most active Enron worker in this shortlist for sending emails. He sends emails about all topics, especially meetings and various business aspects. The highest peak for sending email is from October, 2001 to January 2002 which is the period where the company was under SEC investigation and the bankruptcy process started. We could thing he holds a high level of responsibility within the company. But even at this time the number of email which speak about the enron event is lower than the email which speak about the business process. Maybe he his more involved in the company business than to manage the investigation and or the bankruptcy. 
 
-- The other workers at Enron are pointed out to be involved in the events, but they send fewer emails about these topics (no more than 15). This could be because the email text data aren't exhaustive, and many of their emails about these topics are censored for the public.
+- The other workers at Enron are pointed out to be involved in the events, but they send fewer emails about these topics (no more than 15). This could be because the email text data aren't exhaustive, and many of their emails about these topics are censored for the public. Perhaps, most of the time the email which match with their subject are sent in 2001.
 
-- All of them send emails about meetings, core business, and Enron events. Surprisingly, we don't find words associated with the core business at Enron. Perhaps these individuals are more active in the business processes than in the regular affairs of the company.
+- All of them send emails about meetings, core business, and Enron events. Surprisingly, we find few associated with the core business at Enron. Perhaps these individuals are more active in the business processes than in the regular affairs of the company.
 
 
 Next we look at the number of email received about those topics
@@ -2580,8 +2579,6 @@ person_of_interest_reciveid_subject <-person_of_interest_reciveid_subject %>%
 
 Display the email received about those topics for each Enron's worker knows to be imply in the Enron events
 ```{r fig.width=13}
-
-
 #initiate the list to collect the plot
 plot_list <- list()
 
@@ -2652,7 +2649,7 @@ We can observe that:
 - Timothy Belden and Vincent Kaminski, after the meeting topic, received more emails about the business process compared to other topics. This may be due to their roles in the company and suggests they are the most informed in this group about the business process.
 
 
-**From this analysis, we can deduce that Jeff Dasovich is highly active in the email exchanges on all the topics investigated here. The other person for whom we looked at the email subject and content seems to be more passive than active in the email exchange. In fact, they send few emails about those topics compared to the number they received. In the emails received, an important part concerns the business process as well as meetings. This suggests that these persons are aware of how the company manages its business and maybe participate in meetings about them.**
+**From this analysis, we can deduce that Jeff Dasovich is highly active in the email exchanges on all the topics investigated here. The other person for whom we looked at the email subject and content seems to be more passive than active in the email exchange. In fact, they send few emails about those topics compared to the number they received. In the emails received, an important part concerns the business process as well as meetings. This suggests that these persons are aware of how the company manages its business and maybe participate in meetings about them. Moreover, because the peak for all in sending and receiving email is from October 2001 to January 2002 we can thing that, they are involved and informed in the investigation and/or the bankruptcy management at various level.**
 
 
 #### The external exchange
@@ -2743,7 +2740,7 @@ extern_email_graph %>% select(-subject) %>%
     labels = topic_label)
 ```
 
-The graph above show us that, some email between person without enron email address exchange about the Ernon event especially their business process, less speak about the core business of the company. Those email are mostly send between october 2001 and January 2002 which is the period of the Enron fraud investigation by the SEC. Inside the email content we don't find the key words related to those events. 
+The graph above show us that, some email between person without enron email address exchange about the Ernon event especially their business process, less speak about the core business of the company. Those email are mostly send between october 2001 and January 2002 which is the period of the Enron fraud investigation by the SEC. Most of the time it is in the email we found person speaking of those event. Because of the period we could think they speak more about the bankruptcy than the investigation itself.
 
 ```{r}
 #isolate the subject about enron and their event
