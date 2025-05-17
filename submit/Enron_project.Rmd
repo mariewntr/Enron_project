@@ -1242,6 +1242,8 @@ for(j in seq(1,n,by=plot_per_section)){
 
 By looking year by year we can see that:
 
+- The highest number of email is sent in 2001 by all status which is the year where the company face the SEC investigation as well as the bankruptcy start.
+
 - It is the workers with employee status who send the highest number of emails in the different years. The number of emails sent follows the trend we observed when we look at all Enron's workers, suggesting that the employees influence the general email exchange number per month in the company. This could be linked to the number of employees in the company. In 2001, the employee group was the one who sent the highest number of emails.
 
 - The CEO appears in the emails sent from January 2000, which is the moment their role is formally declared in the company. They send a high number of emails compared to directors and managing directors. Especially in the year 2001, in April, May, October, and November, they send an important number of emails. This may be related to the fiscal fraud investigation.
@@ -1315,7 +1317,9 @@ for(j in seq(1,n,by=plot_per_section)){
 ```
 
 The plot above shows that:
-- Like for the email sent, it is the employees who receive the highest number. They follow the same trend as we saw for the emails sent, suggesting they are active in email exchanges in general.
+- Like for the email sent, all the status received an important number of email in 2001. The pattern of the email received follow the same trend as what we saw for the emails sent, suggesting they are exchange. 
+
+-  Also here it is again the employees who receive the highest number of emails.
 
 - The traders seem to receive more emails than they send.
 
@@ -1325,6 +1329,7 @@ The plot above shows that:
 
 - In 2001, the in-house lawyer group seemed to receive the highest number of emails.
 
+**For both the email sent and received we see a peak of email for the months October and November in the year 2001 which is the period of the SEC investigation. Moreover, their all received more email than they sent suggesting one email will touch a lot of person in the company. From those graph we can think that for all the status it has a lot of email exchange, maybe to manage the SEC investigation inside the company.To understand at which type of exchange those emails could related we will look at some topics which are link to the events (investigation and bankruptcy) as well as to the business process of the company.** 
 
 ```{r}
 #environment cleaning
@@ -1465,6 +1470,8 @@ email_subject_send_graph %>% select(year_month, starts_with("sum_subject_")) %>%
 ```
 
 We can see that:
+
+- We could see that, the highest spikes for all topics are from October, 2001 to April, 2002. 
 
 - The top topic is about the meeting; then we have the business process and the business core.
 
@@ -1646,7 +1653,7 @@ email_subject_rec_graph %>% select(year_month, starts_with("sum_subject_")) %>%
     labels = topic_label[1:4])
 ```
 
-Here for the subject of the email received we distinct two spikes for each subject, the 1st from July, 2000 to July, 2001 and 2nd from August, 2001 to April, 2002. This 2 spikes are included in the 3 spikes seen in the email send. For the topics, we see the same pattern as for the email send.
+Here for the subject of the email received we distinct two spikes for each subject, the 1st from July, 2000 to July, 2001 and 2nd from August, 2001 to April, 2002. This 2 spikes are included in the 3 spikes seen in the email send. For the topics, we see the same pattern as for the email sent.
 
 
 ```{r fig.width=12}
@@ -1887,6 +1894,7 @@ for (i in seq(1, n, by=plot_per_section)){
 ```
 
 When we look at the emails received, we can see that:
+
 - The pattern for the emails received looks the same as the one for the emails sent, suggesting most are email exchanges about the same subject. In the emails received for every status, we can see more emails that speak about the Enron event, suggesting that people in the company are aware of what happened. However, these emails might contain information on what happened or directions to follow in response to potential questions from the investigators.
 
 - The CEO received more emails than they sent. They especially received a significant number of emails about meetings. Perhaps due to their position, they are informed of all or most of the meetings conducted in the company. During the Enron event, they seemed to receive a large number of emails about the core business and processes. This might be to keep them informed about what was happening in the company.
@@ -2438,7 +2446,7 @@ for(i in seq(enron_worker_rec)){
 worker_rec_plot
 ```
 
-When we look at the number of emails received/sent by Enron workers known for being involved in the Enron event, we can see they sent fewer emails than they received. Moreover, the pattern of each follows the general pattern of the workers in the Enron company. For all, we find principally the emails are sent or received in 2001.
+When we look at the number of emails received/sent by Enron workers known for being involved in the Enron event, we can see they sent fewer emails than they received. Moreover, the pattern of each follows the general pattern of the workers in the Enron company. For all, we find principally the emails are sent or received in 2001 suggesting they are active in the email exchange during the SEC investigation as well as the bankruptcy.
 By adding Jeff Dasovich, whom we identified earlier to be the most active sender, we see that he is the most active in this group of people working at Enron. The least active senders in this group are Sherron Watkins, Andrew Baker, Andrew, and Laura Fastow.
 
 
@@ -2539,6 +2547,8 @@ for (i in seq(1, n, by=plot_per_section)){
 ```
 
 We can see that:
+
+- For most of the worker study here we can see that they sent email which speak about those topics principally in 2001. This follow the period of the investigation and the bankruptcy.
 
 - Jeff Dasovich is the most active Enron worker in this shortlist for sending emails. He sends emails about all topics, especially meetings and various business aspects. The highest peak for sending email is from October, 2001 to January 2002 which is the period where the company was under SEC investigation and the bankruptcy process started. We could thing he holds a high level of responsibility within the company. But even at this time the number of email which speak about the enron event is lower than the email which speak about the business process. Maybe he his more involved in the company business than to manage the investigation and or the bankruptcy. 
 
@@ -2643,6 +2653,8 @@ for (i in seq(1, n, by=plot_per_section)){
 ```
 
 We can observe that:
+
+- Like for the email sent those topics are see in email received mostly in 2001 suggesting they are related to the event. 
 
 - All received more emails which are about or speak about the Enron event, and both business parts show they are more informed than active in the email exchange about those topics. This is true for everyone except Jeff Dasovich, who received and sent a similar number of emails related to those topics.
 
