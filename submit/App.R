@@ -149,7 +149,7 @@ per_year <- df_message_status %>% select(date, year, status_sender, status_recip
 #For visualize and compare the most active employee to the other member of his group and the total Enron worker
 #plot the top 10 sender/receiver
 p_sender <- df_message_status %>% distinct(sender, subject, recipient, .keep_all = TRUE) %>%
-  group_by(sender)%>% count() %>% #to count the number of email sent per email address
+  group_by(sender)%>% count() %>% #to count the number of emails sent per email address
   ungroup() %>%
   #calculate the percentage for each sender
   mutate(perc = round(`n`/sum(`n`),3),
@@ -318,7 +318,7 @@ person_of_interest_send <- email_subject_send %>%
       .default = sender))
 
 person_of_interest_send_subject <- person_of_interest_send %>%
-  #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
+  #to compute the number of emails sent in each topics by the person whose are directly involved in the Enron scandal
   group_by(year_month, email_label_sender) %>%
   mutate(
     sum_subject_meeting = sum(subject_meeting),
@@ -367,7 +367,7 @@ person_of_interest_reciveid <- email_subject_rec %>%
         .default = recipient)) 
 
 person_of_interest_reciveid_subject <- person_of_interest_reciveid %>%
-  #to compute the number of email sent in each topics by the person whose are directly involved in the Enron scandal
+  #to compute the number of emails sent in each topics by the person whose are directly involved in the Enron scandal
   group_by(year_month, email_label_recipient) %>%
   mutate(
     sum_subject_meeting = sum(subject_meeting),
@@ -705,14 +705,14 @@ ui <- dashboardPage(
               column(width = 6,
                 tabBox(width = 12, title = "worker 1",
                   tabPanel("Sent",
-                           fluidRow(box(width=12, title = "Number of email sent",
+                           fluidRow(box(width=12, title = "Number of emails sent",
                                plotOutput("EnronWorkerSend_tab1")
                            )),
                            fluidRow(box(width=12, title = "Email sent, subject and text analyze",
                                plotOutput("EnronWorkerSubjectSend_tab1")
                            ))),
                   tabPanel("Received",
-                           fluidRow(box(width=12, title = "Number of email received",
+                           fluidRow(box(width=12, title = "Number of emails received",
                                plotOutput("EnronWorkerRec_tab1")
                            )),
                            fluidRow(box(width=12, title = "Email received, subject and text analyze",
@@ -721,14 +721,14 @@ ui <- dashboardPage(
               column(width = 6,
                      tabBox(width = 12, title = "worker 2",
                            tabPanel("Sent",
-                                    fluidRow(box(width=12, title = "Number of email sent",
+                                    fluidRow(box(width=12, title = "Number of emails sent",
                                         plotOutput("EnronWorkerSend_tab2")
                                     )),
                                     fluidRow(box(width=12, title = "Email sent, subject and text analyze",
                                         plotOutput("EnronWorkerSubjectSend_tab2")
                                     ))),
                            tabPanel("Received",
-                                    fluidRow(box(width=12, title = "Number of email received",
+                                    fluidRow(box(width=12, title = "Number of emails received",
                                         plotOutput("EnronWorkerRec_tab2")
                                     )),
                                     fluidRow(box(width=12, title = "Email received, subject and text analyze",
@@ -917,7 +917,7 @@ server <- function(input, output){
     
     #draw the wordcloud with the frequency of each word, only the top 10
     wordcloud(word_list, total_count, min.freq = 10 ,max.words= length(word_list),scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
-    title(main = paste0("The top words seen in the email subject and text sent"), col.main = "black", font.main = 2)
+    title(main = paste0("top words seen in the email\n subject and text sent"), col.main = "black", font.main = 2)
     
   })
   
@@ -982,7 +982,7 @@ server <- function(input, output){
     
     #draw the wordcloud with the frequency of each word, only the top 10
     wordcloud(word_list, total_count, min.freq = 10 ,max.words= length(word_list),scale = c(3, 0.5) ,col=colorRampPalette(c("#cce5ff", "#3399ff", "#003366"))(length(total_count)), rot.per = 0.3)
-    title(main = paste0("The top words seen in the email subject and text received"), col.main = "black", font.main = 2)
+    title(main = paste0("top words seen in the email \n subject and text received"), col.main = "black", font.main = 2)
     
   })
   
@@ -1009,7 +1009,7 @@ server <- function(input, output){
   })
   
   output$StatusRec <- renderPlot({
-    #compute the number of email sent per day per employee status
+    #compute the number of emails sent per day per employee status
     violin_worker_rec <- reactive({df_message_status %>% filter(!is.na(status_recipient)) %>%
       group_by(date, status_recipient) %>%
       summarise(email_count = n(), .groups = "drop")})

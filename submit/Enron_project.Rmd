@@ -1167,7 +1167,48 @@ For the email exchange, we can see that:
 
 The data set covers the email exchanges between Enron's workers from 1999 to 2002. From 1999 to early 2001, the company was in good health. Starting in the middle of 2001, the company's fraud became public and put the company in trouble. Through the email history, we will look at whether the number of emails sent and received changed over the months in relation to the workers' status. 
 
-We look over the month of each year which are the worker status the most active. 
+Analyze for each year the number of emails sent by each status.
+```{r}
+kable(df_message_status %>% filter(!is.na(status_sender)) %>%
+  select(year, sender, status_sender, subject, reference, recipient) %>% 
+  distinct() %>%
+  group_by(year, status_sender, sender) %>%
+  summarise(nb_email = n(), .groups = "drop") %>% group_by(year, status_sender) %>%
+  summarise(
+    mean = round(mean(nb_email), 2),
+    median = round(median(nb_email), 2),
+    sd = round(sd(nb_email), 2),
+    min = round(min(nb_email),2),
+    Q1 = round(quantile(nb_email, 0.25),2),
+    Q3 = round(quantile(nb_email, 0.75),2),
+    max = round(max(nb_email),2)))
+```
+
+This highlights that, each year, by looking at the average, we could think it is the employees who sent the highest number of emails. But when we look at the median, they aren't the group that sent the highest number of emails, suggesting the number of emails sent per employee is unequal and must have extreme values for them.
+Although the median tells us it is for the year 1999 the managing director who sent the highest number of emails, then for the year 2000, it is the CEO, in 2001, it is the in-house lawyer, and for the year 2002, it is the president. This makes sense with the event where we could think for the year 2002 the in-house lawyer will have a lot to manage with the SEC investigation as well as the bankruptcy, and then in 2002, the president will also have a lot of things to handle with the bankruptcy.
+For all the statuses, it is in 2001 that they sent the highest number of emails. This is coherent with what we saw previously, where there was a peak of emails sent in the company in 2001.
+
+Analyze for each year the number of email received for each status
+```{r}
+kable(df_message_status %>% filter(!is.na(status_recipient)) %>%
+  select(year, sender, status_recipient, subject, reference, recipient) %>% 
+  distinct() %>%
+  group_by(year, status_recipient, recipient) %>%
+  summarise(nb_email = n(), .groups = "drop") %>% group_by(year, status_recipient) %>%
+  summarise(
+    mean = round(mean(nb_email), 2),
+    median = round(median(nb_email), 2),
+    sd = round(sd(nb_email), 2),
+    min = round(min(nb_email),2),
+    Q1 = round(quantile(nb_email, 0.25),2),
+    Q3 = round(quantile(nb_email, 0.75),2),
+    max = round(max(nb_email),2)))
+```
+
+From the email analysis, we observe that the mean and median results are more coherent, suggesting there are fewer extreme values in certain groups such as employees. For the year 1999, the Managing Director received the highest number of emails, followed by the President in 2000. In 2001, it was the President, Vice-President, and Managing Director, and for the year 2002, it was the Trader.
+This is consistent with the events where the heads of the company and the heads of operations needed to be the most informed about what was happening in the company, as well as to respond to the SEC investigation. With the email traffic we investigated earlier, we could conclude that the emails sent by the In-House Lawyer were primarily addressed to them. This also makes sense given their positions and the situation in the company at that time.
+
+Next we look over the month of each year which are the worker status the most active. 
 For the employee.
 ```{r fig.width=13}
 #list of status in the Enron company
@@ -1189,7 +1230,7 @@ for(i in seq(status_list)){
   
   p <- df_message_status %>% filter(status_sender == status) %>% #take the value in the list
   group_by(year,month)%>%
-  count() %>% 
+  summarise(n = n()) %>% 
     #bar plot
     ggplot(aes(month, n, fill = month))+
   geom_bar(stat = "identity") +
@@ -1337,7 +1378,6 @@ rm(jeff_stat, recipient_stat, statuts_stat, violin_plot, violin_plot1, violin_pl
 ```
 
 
-
 ### Analysis of the email subject and content
 
 In our data set we have `r length(!is.na(df_message_status$reference))` rows with email content which represent `r paste0((length(!is.na(df_message_status$reference))/length(row(df_message_status)))*100,"%")`. This make the email content is few exhaustive compared to the email subject which is describe for every email exchange. 
@@ -1424,6 +1464,7 @@ topic_label <- c("sum_subject_business_process" = "Business process email subjec
                  "sum_email_enron_event" = "Enron's event email text")
 ```
 
+
 Because the number of line which contain email description is lower than the length of the table the research of the keyword about Enron event in the email create many NA value. To be able to compute the sum of the email which contain those word we use the parameter na.rm = TRUE which consider the NA as it is a 0 in the data set to compute the sum. 
 
 ```{r fig.width=12}
@@ -1442,11 +1483,41 @@ email_subject_send_graph <- email_subject_send %>%
     sum_email_meeting = sum(email_meeting, na.rm = TRUE),
     sum_email_enron_event = sum(email_enron_event, na.rm = TRUE)) %>% ungroup() %>%
   #keep one line per year and month
-  distinct(year_month, subject, reference, sum_subject_meeting, sum_subject_business_process, sum_subject_core_business, sum_subject_enron_event, 
+  distinct(year_month, year, subject, reference, sum_subject_meeting, sum_subject_business_process, sum_subject_core_business, sum_subject_enron_event, 
            sum_email_business_process,sum_email_core_business,sum_email_meeting,sum_email_enron_event)
 
+#descriptive statistics of the topic over the period of study
+topic_stat <- email_subject_send_graph %>% group_by(year) %>%
+  summarise(across(
+    .cols = c(sum_subject_meeting,sum_subject_business_process,sum_subject_core_business,sum_subject_enron_event,
+    sum_email_business_process,sum_email_core_business,sum_email_meeting,sum_email_enron_event),
+    .fns = list(
+      mean = ~round(mean(.x, na.rm = TRUE),2),
+      median = ~round(median(.x, na.rm = TRUE),2),
+      sd = ~round(sd(.x, na.rm = TRUE),2),
+      min = ~round(min(.x, na.rm=TRUE),2),
+      Q1 = ~round(quantile(.x, 0.25, na.rm = TRUE),2),
+      Q3 = ~round(quantile(.x, 0.75, na.rm = TRUE),2),
+      max = ~round(max(.x, na.rm=TRUE),2)
+    ), 
+    .names="{.col}_{.fn}"))
 
+topic_stat <- pivot_longer(
+  topic_stat,
+  cols = 2:length(topic_stat),
+  names_to = "topics",
+  values_to = "values"
+) 
 
+kable(topic_stat)
+
+```
+
+We observed that the highest number of emails containing words about those topics in their subject or text has been since 2000. In 2001, we found the highest number of emails containing them in their subject/text.
+In 1999, the topics in the email subject and text did not show any clear top topics. In 2000, the meeting topics were the top for the subject, and in the text, the two top subjects were meeting and business process. We observed the same for the year 2001. It was in 2001 that we saw the highest number of emails about the Enron event. This makes sense because it was the period of the SEC investigation and the start of the bankruptcy, and the words we researched in this list are related to those events. We could think that, in the email exchanges, we can visualize the dynamic of the emails about those events.
+
+We pursue by visualized what this stable described by graph for the emails in the data set and the by focusing by each status. We will try also to find the top word find over the period of study in the data set as well as for each status. 
+```{r}
 #display the different topic trend in the email subject over the study's period
 email_subject_send_graph %>% select(year_month, starts_with("sum_subject_")) %>%
   #change the orientation of the data set
@@ -1468,6 +1539,7 @@ email_subject_send_graph %>% select(year_month, starts_with("sum_subject_")) %>%
     values = topic_colors[1:4],
     labels = topic_label[1:4])
 ```
+
 
 We can see that:
 
@@ -1550,6 +1622,8 @@ email_subject_send_graph %>% select(year_month, starts_with("sum_email_")) %>%
 ```
 
 In the email content, we can see that:
+
+- This graph confirm what is describe in the table, we have a peak for all the topic studied in 2001. Here we can say that, this peak start in October 2001, and end in April, 2002 which is the period where the company was under the SEC investigation and start the bankruptcy process. 
 
 - For all topics investigated, we find a peak of emails containing them from April 2001 to April 2002, which is related to a peak in email exchange as we saw earlier in this analysis. Additionally, this period is when the company was under SEC investigation and, in late 2001/early 2002, the bankruptcy process.
 
@@ -2374,8 +2448,45 @@ person_of_interest_reciveid <- email_subject_rec %>%
 
 ```
 
-
 We look at the number of email send/received for each person studied:
+
+Over the study period we can describe the number of emails sent by each person in this list:
+```{r}
+kable(person_of_interest_send %>% select(year, email_label_sender, subject, reference) %>% distinct() %>%
+  group_by(year, email_label_sender) %>%
+  summarise(nb_email = n(), .groups = "drop") %>% group_by(email_label_sender) %>%
+  summarise(
+    mean = round(mean(nb_email), 2),
+    median = round(median(nb_email), 2),
+    sd = round(sd(nb_email), 2),
+    min = round(min(nb_email),2),
+    Q1 = round(quantile(nb_email, 0.25),2),
+    Q3 = round(quantile(nb_email, 0.75),2),
+    max = round(max(nb_email),2)))
+
+```
+
+In our worker shortlist, Jeff Dasovich is the most active worker in sending emails, followed by Greg Whalley, Timothy Belden, and Vincent Kaminski. On the Wikipedia page about the Enron event, we do not know what role Jeff Dasovich played, nor if he was truly involved in the fraud or its management. Timothy Belden and Vincent Kaminski are both part of the financial branch of the company. Due to their positions, they might be deeply involved in the fraud, either participating in it or managing it during the investigation or pushing it into the spotlight. Greg Whalley is known to be an executive of the Enron company and might have received a large number of emails because of his position. 
+
+
+```{r}
+kable(person_of_interest_reciveid %>% select(year, email_label_recipient, subject, reference) %>% distinct() %>%
+  group_by(year, email_label_recipient) %>%
+  summarise(nb_email = n(), .groups = "drop") %>% group_by(email_label_recipient) %>%
+  summarise(
+    mean = round(mean(nb_email), 2),
+    median = round(median(nb_email), 2),
+    sd = round(sd(nb_email), 2),
+    min = round(min(nb_email),2),
+    Q1 = round(quantile(nb_email, 0.25),2),
+    Q3 = round(quantile(nb_email, 0.75),2),
+    max = round(max(nb_email),2)))
+```
+
+As previously mentioned, each worker in the shortlist received more emails than they sent. Jeff Dasovich is the one who received the highest number. Similar to the description of the emails sent, Timothy Belden, Greg Whalley, and Vincent Kaminski are the workers who received the highest number of emails.
+In the emails sent and received, we find some workers who exchanged fewer than 10 emails over the study period (Andrew Baker, Lea Fastow, and Sherron Watkins). Andrew Fastow appears to be a passive participant in the email exchange, as he seems to have only received emails compared to the number he sent (an average of 7 emails sent versus an average of 91 emails received). We could hypothesize that he is informed about what happens in the company but may not actively participate in the exchanges.
+
+We will continue our analysis by investigating the number of emails sent and received by each worker per month over the study period and then try to determine if the email exchanges pertain to the topics we described earlier in the different statuses.
 
 The email send each month:
 ```{r}
