@@ -90,9 +90,8 @@ library(ggbreak)
 library(knitr)
 library(shiny)
 
-#dataset
-load(file = "/Enron.Rdata")
 ```
+
 
 We design a function to extract the legend which is common to several plot inside a layout to displayed it once. We won't use it if the legend change between the plot to avoid confusing.
 ```{r}
